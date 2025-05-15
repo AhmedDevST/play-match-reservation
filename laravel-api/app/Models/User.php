@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -18,9 +19,11 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'username',
         'email',
         'password',
+        'profile_picture',
+        'score',
     ];
 
     /**
@@ -43,6 +46,42 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'score' => 'double',
         ];
+    }
+
+    public function invitationsSent(): HasMany
+    {
+        return $this->hasMany(Invitation::class, 'sender_id');
+    }
+
+    public function invitationsReceived(): HasMany
+    {
+        return $this->hasMany(Invitation::class, 'receiver_id');
+    }
+
+    public function userTeamSportLinks(): HasMany
+    {
+        return $this->hasMany(UserTeamSportLink::class);
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(Reservation::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
     }
 }
