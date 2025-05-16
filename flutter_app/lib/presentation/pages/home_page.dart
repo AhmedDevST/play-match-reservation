@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'sports_category/sports_category_page.dart';
-
+import 'package:flutter_app/presentation/pages/sports_category/sports_category_page.dart';
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
