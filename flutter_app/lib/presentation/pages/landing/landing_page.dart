@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/presentation/pages/home/home_page.dart';
 import 'package:flutter_app/presentation/pages/login_registration/Login.dart';
 
 class LandingPage extends StatelessWidget {
@@ -93,7 +94,7 @@ class LandingPage extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Créer un compte',
+                      'Créer un compte1',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -104,8 +105,11 @@ class LandingPage extends StatelessWidget {
                   
                   // Bouton Se connecter
                   OutlinedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed('/home');
+                   onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HomePage()),
+                      );
                       // TODO: Navigation vers la page de connexion
                     },
                     style: OutlinedButton.styleFrom(

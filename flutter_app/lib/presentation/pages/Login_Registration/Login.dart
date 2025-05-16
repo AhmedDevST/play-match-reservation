@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:flutter_app/presentation/pages/Login_Registration/SignUp.dart';
+import 'package:flutter_app/presentation/pages/home/home_page.dart';
 
 class Login extends StatefulWidget {
   const Login({Key? key}) : super(key: key);
@@ -246,7 +247,11 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                   child: ElevatedButton(
                                     onPressed: () {
                                       if (_formKey.currentState!.validate()) {
-                                        // TODO: Implémentation de la logique de connexion
+                                        // Navigation vers la page d'accueil après validation du formulaire
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const HomePage()),
+                                        );
                                       }
                                     },
                                     style: ElevatedButton.styleFrom(
