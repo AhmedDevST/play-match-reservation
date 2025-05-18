@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class ReservationPage extends StatefulWidget {
+class SelectTimeSlot extends StatefulWidget {
   final String facilityName;
   final String price;
 
-  const ReservationPage({
+  const SelectTimeSlot({
     Key? key,
     required this.facilityName,
     required this.price,
   }) : super(key: key);
 
   @override
-  State<ReservationPage> createState() => _ReservationPageState();
+  State<SelectTimeSlot> createState() => _SelectTimeSlotState();
 }
 
-class _ReservationPageState extends State<ReservationPage> {
+class _SelectTimeSlotState extends State<SelectTimeSlot> {
   int selectedDateIndex = 0;
   int selectedSlotType = 2; // 0: Morning, 1: Afternoon, 2: Evening, 3: Night
   int? selectedTimeSlotIndex;

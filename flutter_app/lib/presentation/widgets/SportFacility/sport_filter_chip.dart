@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class CategoryFilterChip extends StatelessWidget {
+class SportFilterChip extends StatelessWidget {
   final String label;
   final bool isSelected;
   final Function(bool) onSelected;
 
-  const CategoryFilterChip({
+  const SportFilterChip({
     Key? key,
     required this.label,
     required this.isSelected,
@@ -24,14 +24,14 @@ class CategoryFilterChip extends StatelessWidget {
       ),
       selected: isSelected,
       onSelected: onSelected,
-      backgroundColor: Colors.white,
-      selectedColor: Colors.blue,
+      backgroundColor: Theme.of(context).chipTheme.backgroundColor,
+      selectedColor: Theme.of(context).primaryColor,
       checkmarkColor: Colors.white,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(
-          color: isSelected ? Colors.blue : Colors.grey.shade300,
+          color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
           width: 1,
         ),
       ),

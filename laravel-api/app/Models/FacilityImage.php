@@ -26,4 +26,5 @@ class FacilityImage extends Model
     {
         return $this->belongsTo(SportFacility::class);
     }
+    
 } 

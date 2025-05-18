@@ -1,26 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/SportFacility.dart';
+import 'package:image_network/image_network.dart';
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:flutter_app/presentation/widgets/SportFacility/sport_chip.dart';
 
 class FacilityDetailsPage extends StatelessWidget {
-  final String name;
-  final List<String> categories;
-  final double rating;
-  final String price;
-  final String imageUrl;
+  final SportFacility sportFacility;
 
   const FacilityDetailsPage({
     Key? key,
-    required this.name,
-    required this.categories,
-    required this.rating,
-    required this.price,
-    required this.imageUrl,
+    required this.sportFacility,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(name),
+        title: Text(sportFacility.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.favorite_border),
@@ -30,15 +26,30 @@ class FacilityDetailsPage extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
-            child: Image.network(
-              imageUrl,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
+          if (sportFacility.images != null && sportFacility.images!.isNotEmpty)
+            CarouselSlider(
+              options: CarouselOptions(
+                height: 220,
+                viewportFraction: 1.0,
+                enableInfiniteScroll: false,
+                enlargeCenterPage: true,
+              ),
+              items: sportFacility.images!.map((imgUrl) {
+                print('Facility image URL: ' + imgUrl);
+                return ClipRRect(
+                 // borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  child: ImageNetwork(
+                    image: imgUrl,
+                    height: 220,
+                    width: MediaQuery.of(context).size.width,
+                    fitWeb: BoxFitWeb.cover,
+                    fitAndroidIos: BoxFit.cover,
+                    onLoading: const Center(child: CircularProgressIndicator()),
+                  //  onError: const Icon(Icons.error),
+                  ),
+                );
+              }).toList(),
             ),
-          ),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -48,7 +59,7 @@ class FacilityDetailsPage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      name,
+                      sportFacility.name,
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
@@ -58,14 +69,14 @@ class FacilityDetailsPage extends StatelessWidget {
                       children: [
                         Icon(Icons.star, color: Colors.amber[700], size: 20),
                         const SizedBox(width: 4),
-                        Text(rating.toString()),
+                        Text(sportFacility.rating.toString()),
                       ],
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  price + ' Onwards',
+                  '\u20B9${sportFacility.pricePerHour} Onwards',
                   style: const TextStyle(
                     fontSize: 18,
                     color: Colors.black87,
@@ -75,19 +86,15 @@ class FacilityDetailsPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, color: Colors.blue),
+                    Icon(Icons.location_on, color: Theme.of(context).primaryColor),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        'No 24 OMR Complex opposite to pvr cinemas, chennai',
+                        sportFacility.address,
                         style: const TextStyle(fontSize: 15),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text('View on maps', style: TextStyle(color: Colors.blue)),
                     ),
                   ],
                 ),
@@ -97,9 +104,9 @@ class FacilityDetailsPage extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Our turf venue offers a world-class facility for a variety of sports, including cricket, football, badminton, and volleyball. With state-of-the-art synthetic turf designed for enhanced performance and reduced wear, the venue provides the ideal surface for both professional and recreational players.',
-                  style: TextStyle(fontSize: 15),
+                Text(
+                  sportFacility.description ?? '',
+                  style: const TextStyle(fontSize: 15),
                 ),
                 const SizedBox(height: 16),
                 const Text(
@@ -109,10 +116,10 @@ class FacilityDetailsPage extends StatelessWidget {
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
-                  children: categories.map((cat) => Chip(
-                    label: Text(cat, style: const TextStyle(color: Colors.white)),
-                    backgroundColor: Colors.blue,
-                  )).toList(),
+                  children: sportFacility.sports
+                          ?.map((sport) =>  SportChip(label: sport.name))
+                          .toList() ??
+                      [],
                 ),
                 const SizedBox(height: 16),
                 const SizedBox(height: 24),
@@ -123,13 +130,14 @@ class FacilityDetailsPage extends StatelessWidget {
                       // Navigate to reviews page (placeholder)
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Theme.of(context).primaryColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('View Reviews', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    child: const Text('View Reviews',
+                        style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                 ),
               ],
@@ -156,4 +164,4 @@ class _Amenity extends StatelessWidget {
       ],
     );
   }
-} 
+}
