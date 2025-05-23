@@ -9,11 +9,11 @@ class SportFacilityCard extends StatelessWidget {
   final VoidCallback onSelectTap;
 
   const SportFacilityCard({
-    Key? key,
+    super.key,
     required this.sportFacility,
     required this.onTap,
     required this.onSelectTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

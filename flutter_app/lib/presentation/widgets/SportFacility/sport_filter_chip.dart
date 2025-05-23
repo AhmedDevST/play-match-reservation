@@ -6,11 +6,11 @@ class SportFilterChip extends StatelessWidget {
   final Function(bool) onSelected;
 
   const SportFilterChip({
-    Key? key,
+    super.key,
     required this.label,
     required this.isSelected,
     required this.onSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

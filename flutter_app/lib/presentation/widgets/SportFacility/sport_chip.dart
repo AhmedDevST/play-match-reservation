@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class SportChip extends StatelessWidget {
   final String label;
-  const SportChip({Key? key, required this.label}) : super(key: key);
+  const SportChip({super.key, required this.label});
 
   @override
   Widget build(BuildContext context) {

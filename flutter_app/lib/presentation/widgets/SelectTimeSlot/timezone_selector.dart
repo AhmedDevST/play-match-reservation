@@ -7,11 +7,11 @@ class TimeZoneSelector extends StatelessWidget {
   final Function(TimeZone) onTimeZoneSelected;
 
   const TimeZoneSelector({
-    Key? key,
+    super.key,
     required this.timeZones,
     required this.selectedTimeZone,
     required this.onTimeZoneSelected,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

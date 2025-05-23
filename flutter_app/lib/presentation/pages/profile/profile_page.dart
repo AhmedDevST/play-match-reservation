@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
@@ -612,7 +611,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                       pref['sport'],
                       pref['value'],
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             ),
@@ -726,7 +725,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                   const SizedBox(height: 15),
                   ..._activities.map((activity) {
                     return _buildActivityItem(activity);
-                  }).toList(),
+                  }),
                 ],
               ),
             ),

@@ -9,7 +9,7 @@ import 'package:easy_debounce/easy_debounce.dart';
 
 class CreateMatch extends StatefulWidget {
   final SportFacility facility;
-  const CreateMatch({Key? key, required this.facility}) : super(key: key);
+  const CreateMatch({super.key, required this.facility});
 
   @override
   State<CreateMatch> createState() => _CreateMatchState();

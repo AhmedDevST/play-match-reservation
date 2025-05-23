@@ -7,11 +7,11 @@ class DateSelector extends StatefulWidget {
   final Function(int) onDateSelected;
 
   const DateSelector({
-    Key? key,
+    super.key,
     required this.dates,
     required this.selectedIndex,
     required this.onDateSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<DateSelector> createState() => _DateSelectorState();
@@ -83,7 +83,7 @@ class _DateSelectorState extends State<DateSelector> {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 8),
-        Container(
+        SizedBox(
           width: double.infinity,
           height: 70,
           child: Center(

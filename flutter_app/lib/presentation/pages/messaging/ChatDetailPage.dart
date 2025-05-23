@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class ChatDetailPage extends StatefulWidget {
   final Map<String, dynamic>? chatData;
   
-  const ChatDetailPage({Key? key, this.chatData}) : super(key: key);
+  const ChatDetailPage({super.key, this.chatData});
 
   @override
   _ChatDetailPageState createState() => _ChatDetailPageState();

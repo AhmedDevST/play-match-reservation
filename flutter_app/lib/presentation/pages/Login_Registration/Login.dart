@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:flutter_app/presentation/pages/Login_Registration/SignUp.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
 
 class Login extends StatefulWidget {
@@ -54,7 +53,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   Future<void> _SignIn() async {
     // Utilisez 10.0.2.2 pour l'émulateur Android, qui pointe vers localhost de votre machine
     final url = Uri.parse('http://localhost:8000/api/login');
-    
+   
     try {
       final response = await http.post(
         url,
@@ -67,8 +66,9 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
           'password': _passwordController.text
         }),
       );
+      
       if (response.statusCode == 200) {
-        
+         
         // Succès
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
         // retour à login

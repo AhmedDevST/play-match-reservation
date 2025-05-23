@@ -226,7 +226,7 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin {
 
 
 Future<void> _signUp() async {
-  final url = Uri.parse('http://localhost:8000/public/api/register'); // localhost sur Android Emulator
+  final url = Uri.parse('http://localhost:8000/api/register'); // localhost sur Android Emulator
 
  
   try {

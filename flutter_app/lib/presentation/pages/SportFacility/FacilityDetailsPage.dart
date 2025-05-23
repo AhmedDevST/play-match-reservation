@@ -8,9 +8,9 @@ class FacilityDetailsPage extends StatelessWidget {
   final SportFacility sportFacility;
 
   const FacilityDetailsPage({
-    Key? key,
+    super.key,
     required this.sportFacility,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class FacilityDetailsPage extends StatelessWidget {
                 enlargeCenterPage: true,
               ),
               items: sportFacility.images!.map((imgUrl) {
-                print('Facility image URL: ' + imgUrl);
+                print('Facility image URL: $imgUrl');
                 return ClipRRect(
                  // borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
                   child: ImageNetwork(

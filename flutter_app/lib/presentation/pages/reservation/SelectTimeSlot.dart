@@ -9,19 +9,15 @@ import 'package:flutter_app/presentation/widgets/SelectTimeSlot/timezone_selecto
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/slot_filter.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/time_slot_list.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/select_button.dart';
-import 'package:lottie/lottie.dart';
-import 'package:material_dialogs/material_dialogs.dart';
-import 'package:material_dialogs/widgets/buttons/icon_button.dart';
-import 'package:material_dialogs/widgets/buttons/icon_outline_button.dart';
 import 'package:flutter_app/presentation/widgets/match/CreateMatchDialog.dart';
 
 class SelectTimeSlot extends StatefulWidget {
   final SportFacility facility;
 
   const SelectTimeSlot({
-    Key? key,
+    super.key,
     required this.facility,
-  }) : super(key: key);
+  });
 
   @override
   State<SelectTimeSlot> createState() => _SelectTimeSlotState();

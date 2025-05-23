@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class NetworkPage extends StatefulWidget {
-  const NetworkPage({Key? key}) : super(key: key);
+  const NetworkPage({super.key});
 
   @override
   _NetworkPageState createState() => _NetworkPageState();
@@ -80,7 +80,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
   ];
   
   // Pour la recherche
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _filteredFriends = [];
   List<Map<String, dynamic>> _filteredSuggestions = [];
   bool _isSearching = false;
@@ -615,7 +615,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
 
   // Boîte de dialogue pour ajouter un ami
   void _showAddFriendDialog() {
-    final TextEditingController _codeController = TextEditingController();
+    final TextEditingController codeController = TextEditingController();
     
     showDialog(
       context: context,
@@ -631,7 +631,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
               ),
               const SizedBox(height: 16),
               TextField(
-                controller: _codeController,
+                controller: codeController,
                 decoration: InputDecoration(
                   hintText: "Code d'ami",
                   border: OutlineInputBorder(
@@ -684,7 +684,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
             ElevatedButton(
               onPressed: () {
                 // Vérifier le code d'ami
-                if (_codeController.text.isNotEmpty) {
+                if (codeController.text.isNotEmpty) {
                   Navigator.of(context).pop();
                   
                   // Simuler la recherche
