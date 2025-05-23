@@ -1,10 +1,13 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:flutter_app/presentation/pages/Login_Registration/SignUp.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
 
 class Login extends StatefulWidget {
-  const Login({Key? key}) : super(key: key);
+  const Login({super.key});
 
   @override
   _LoginState createState() => _LoginState();
@@ -46,6 +49,43 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
     Future.delayed(const Duration(milliseconds: 200), () {
       _animationController.forward();
     });
+  }
+
+  Future<void> _SignIn() async {
+    // Utilisez 10.0.2.2 pour l'émulateur Android, qui pointe vers localhost de votre machine
+    final url = Uri.parse('http://localhost:8000/api/login');
+    
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json', // Ajout du header Accept
+        },    
+        body: jsonEncode({
+          'email': _emailController.text,
+          'password': _passwordController.text
+        }),
+      );
+      if (response.statusCode == 200) {
+        
+        // Succès
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+        // retour à login
+      } else {
+        // Erreur
+        final error = jsonDecode(response.body);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : ${error['message']}')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de connexion: $e')),
+      );
+      print(e);
+    }
+
   }
 
   @override
@@ -246,13 +286,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                 _buildDelayedAnimation(
                                   child: ElevatedButton(
                                     onPressed: () {
-                                      if (_formKey.currentState!.validate()) {
-                                        // Navigation vers la page d'accueil après validation du formulaire
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(builder: (context) => const HomePage()),
-                                        );
-                                      }
+                                     _SignIn();
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF2EE59D),
@@ -289,11 +323,15 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                       ),
                                       TextButton(
                                         onPressed: () {
+                                          print("hello");
                                           // Navigation vers la page d'inscription
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(builder: (context) => const SignUp()),
-                                          );
+                                          if (_formKey.currentState!.validate()) {
+                                        // Navigation vers la page d'accueil après validation du formulaire
+                                        Navigator.pushReplacement(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const HomePage()),
+                                        );
+                                      }
                                         },
                                         child: const Text(
                                           "S'inscrire",
@@ -338,7 +376,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
       ),
     );
   }
-  
+ 
   Widget _buildAnimatedTextField({
     required TextEditingController controller,
     required String hintText,

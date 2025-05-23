@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:http/http.dart' as http;
 import 'dart:ui';
 import 'dart:math' as math;
 
 class SignUp extends StatefulWidget {
-  const SignUp({Key? key}) : super(key: key);
+  const SignUp({super.key});
 
   @override
   _SignUpState createState() => _SignUpState();
@@ -220,6 +224,46 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin {
     );
   }
 
+
+Future<void> _signUp() async {
+  final url = Uri.parse('http://localhost:8000/public/api/register'); // localhost sur Android Emulator
+
+ 
+  try {
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },    
+      body: jsonEncode({
+        'username': _nameController.text,
+        'email': _emailController.text,
+        'password': _passwordController.text,
+        'password_confirmation': _confirmPasswordController.text
+      }),
+    );
+    print(response.statusCode);
+
+    if (response.statusCode == 200) {
+      // Succès
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
+      // retour à login
+    } else {
+      // Erreur
+      final error = jsonDecode(response.body);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur : ${error['message']}')),
+      );
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erreur de connexion: $e')),
+      
+    );
+    print(e);
+  }
+  }
+
   Widget _buildForm() {
     return AnimatedBuilder(
       animation: _animationController,
@@ -402,7 +446,10 @@ class _SignUpState extends State<SignUp> with SingleTickerProviderStateMixin {
                     _buildDelayedAnimation(
                       child: ElevatedButton(
                         onPressed: () {
+                         
                           if (_formKey.currentState!.validate() && _acceptTerms) {
+                              
+                              _signUp();
                             // TODO: Implémenter la logique d'inscription
                           } else if (!_acceptTerms) {
                             ScaffoldMessenger.of(context).showSnackBar(

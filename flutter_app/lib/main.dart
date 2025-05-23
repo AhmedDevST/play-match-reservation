@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:flutter_app/presentation/pages/landing/landing_page.dart';
 
 void main() {
   runApp(const MyApp());
@@ -20,14 +21,14 @@ class MyApp extends StatelessWidget {
           elevation: 0,
           centerTitle: true,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 4,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
-      home: const HomePage(),
+      home: const LandingPage(),
     );
   }
 }
