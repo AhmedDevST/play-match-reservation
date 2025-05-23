@@ -23,9 +23,9 @@ class Sport extends Model
         'max_players' => 'integer',
     ];
 
-    public function userTeamSportLinks(): HasMany
+    public function teams(): HasMany
     {
-        return $this->hasMany(UserTeamSportLink::class);
+        return $this->hasMany(Team::class);
     }
 
     public function sportFacilities(): BelongsToMany

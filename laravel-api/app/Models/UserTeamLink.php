@@ -6,16 +6,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class UserTeamSportLink extends Model
+class UserTeamLink extends Model
 {
     use HasFactory;
 
-    protected $table = 'user_team_sport_links';
+    protected $table = 'user_team_links';
 
     protected $fillable = [
         'user_id',
         'team_id',
-        'sport_id',
         'start_date',
         'end_date',
         'has_left_team',
@@ -39,9 +38,4 @@ class UserTeamSportLink extends Model
     {
         return $this->belongsTo(Team::class);
     }
-
-    public function sport(): BelongsTo
-    {
-        return $this->belongsTo(Sport::class);
-    }
-} 
+}
