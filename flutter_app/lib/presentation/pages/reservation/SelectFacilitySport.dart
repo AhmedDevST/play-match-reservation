@@ -121,8 +121,7 @@ Future<void> initReservation() async {
                             context,
                             MaterialPageRoute(
                               builder: (context) => SelectTimeSlot(
-                                facilityName: sportFacilities[index].name,
-                                price: '\u20B9${sportFacilities[index].pricePerHour}',
+                                facility: sportFacilities[index],
                               ),
                             ),
                           );

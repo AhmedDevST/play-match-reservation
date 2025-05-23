@@ -60,9 +60,9 @@ class User extends Authenticatable
         return $this->hasMany(Invitation::class, 'receiver_id');
     }
 
-    public function userTeamSportLinks(): HasMany
+    public function userTeamLinks(): HasMany
     {
-        return $this->hasMany(UserTeamSportLink::class);
+        return $this->hasMany(UserTeamLink::class);
     }
 
     public function reservations(): HasMany

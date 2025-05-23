@@ -19,8 +19,4 @@ Future<List<SportFacility>> fetchSportFacilityBySport(int id) async {
   throw Exception("Failed to fetch sport facilities: ${response.statusCode}");
 }
 
-void main() async {
-  final facilities = await fetchSportFacilityBySport(4);
-  print(facilities);
-}
 

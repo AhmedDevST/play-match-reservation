@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('reservations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('facility_time_slot_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('time_slot_instance_id')->constrained()->cascadeOnDelete();
             $table->foreignId('match_id')->nullable()->constrained()->nullOnDelete();
             $table->dateTime('date');
             $table->decimal('total_price', 8, 2);

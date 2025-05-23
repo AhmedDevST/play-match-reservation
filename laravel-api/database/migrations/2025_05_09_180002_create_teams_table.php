@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->unsignedBigInteger('sport_id')->nullable();
+            $table->foreign('sport_id')->references('id')->on('sports')->nullOnDelete();
             $table->string('image')->nullable();
             $table->integer('total_score')->default(0);
             $table->double('average_rating')->default(0);
@@ -28,4 +30,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('teams');
     }
-}; 
+};

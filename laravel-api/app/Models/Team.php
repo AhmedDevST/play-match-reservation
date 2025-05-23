@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
@@ -22,14 +23,16 @@ class Team extends Model
         'total_score' => 'integer',
     ];
 
-    public function userTeamSportLinks(): HasMany
+    public function userTeamLinks(): HasMany
     {
-        return $this->hasMany(UserTeamSportLink::class);
+        return $this->hasMany(UserTeamLink::class);
     }
-
+    public function sport(): BelongsTo
+    {
+        return $this->belongsTo(Sport::class);
+    }
     public function teamMatches(): HasMany
     {
         return $this->hasMany(TeamMatch::class);
     }
-
 }

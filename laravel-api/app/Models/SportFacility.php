@@ -31,9 +31,9 @@ class SportFacility extends Model
         return $this->hasMany(FacilityImage::class);
     }
 
-    public function facilityTimeSlots(): HasMany
+    public function recurringTimeSlots(): HasMany
     {
-        return $this->hasMany(FacilityTimeSlot::class);
+        return $this->hasMany(RecurringTimeSlot::class);
     }
 
     public function sports(): BelongsToMany

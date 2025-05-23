@@ -11,11 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_team_sport_links', function (Blueprint $table) {
+        Schema::create('user_team_links', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('team_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('sport_id')->constrained()->cascadeOnDelete();
             $table->dateTime('start_date');
             $table->dateTime('end_date')->nullable();
             $table->boolean('has_left_team')->default(false);
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_team_sport_links');
+        Schema::dropIfExists('user_team_links');
     }
-}; 
+};
