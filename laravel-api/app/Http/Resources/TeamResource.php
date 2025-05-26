@@ -14,12 +14,18 @@ class TeamResource extends JsonResource
      */
     public function toArray($request)
     {
+        // Get the UserTeamLink for current user
+        $userTeamLink = $this->userTeamLinks->first();
+        
         return [
             'id' => $this->id,
             'name' => $this->name,
             'image' => $this->image,
             'total_score' => $this->total_score,
             'average_rating' => $this->average_rating,
+            'sport' => $this->sport,
+            'has_left_team' => $userTeamLink ? $userTeamLink->has_left_team : false,
+            'is_captain' => $userTeamLink ? $userTeamLink->is_captain : false,
         ];
     }
 }

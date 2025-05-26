@@ -1,9 +1,19 @@
 import 'package:flutter/material.dart';
-//import 'package:flutter_app/presentation/pages/match/match_details_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'package:flutter_app/presentation/pages/landing/landing_page.dart';
+import 'package:flutter_app/presentation/pages/Team/User_Team_Dash.dart';
+import 'package:flutter_app/presentation/pages/Team/Create_Team.dart';
+import 'package:flutter_app/presentation/pages/Team/Team_invitations.dart';
+import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
+import 'package:flutter_app/core/config/routes.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const ProviderScope(
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -12,23 +22,36 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Application Sportive',
-      debugShowCheckedModeBanner: false,
+      title: 'Play Match Reservation',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[100],
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          centerTitle: true,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const LandingPage(),
+      initialRoute: Routes.landing,
+      onGenerateRoute: (RouteSettings settings) {
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (BuildContext context) {
+            switch (settings.name) {
+              case Routes.landing:
+                return const LandingPage();
+              case Routes.teamDashboard:
+                return const UserTeamDash();
+              case Routes.createTeam:
+                final args = settings.arguments as Map<String, dynamic>?;
+                return CreateTeam(userId: args?['userId'] as String);
+              case Routes.teamInvitations:
+                final args = settings.arguments as Map<String, dynamic>?;
+                return TeamInvitations(teamId: args?['teamId'] as int);
+              case Routes.teamDetails:
+                final teamId = settings.arguments as int;
+                return TeamDetails(teamId: teamId);
+              default:
+                return const UserTeamDash();
+            }
+          },
+        );
+      },
     );
   }
 }

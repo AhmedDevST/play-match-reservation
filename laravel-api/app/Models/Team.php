@@ -16,6 +16,7 @@ class Team extends Model
         'total_score',
         'image',
         'average_rating',
+        'sport_id',
     ];
 
     protected $casts = [

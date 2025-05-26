@@ -20,8 +20,12 @@ Future<List<Team>> fetchTeamsByName(String query) async {
         .toList();
   }
   throw Exception("Failed to fetch");
+
+
 }
-void main() async {
-  final teams = await fetchTeamsByName("tea");
-  print(teams.length);
-}
+
+
+// void main() async {
+//   final teams = await fetchTeamsByName("tea");
+//   print(teams.length);
+// }
