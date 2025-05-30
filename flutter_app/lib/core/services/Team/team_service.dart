@@ -9,9 +9,9 @@ import 'package:flutter_app/models/Team.dart';
 const TEAMS_URL = "$API_URL/api/teams";
 
 
-Future<List<Team>> fetchTeamsByName(String query) async {
+Future<List<Team>> fetchTeamsByNameAndSport(String name,int IdSport, int excludeTeamId) async {
   print("Calling Fetch  ");
-  final url = Uri.parse("$TEAMS_URL/search?q=$query");
+  final url = Uri.parse("$TEAMS_URL/search?name=$name&sport=$IdSport&exclude=$excludeTeamId");
  final response = await http.get(url);
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
@@ -22,6 +22,6 @@ Future<List<Team>> fetchTeamsByName(String query) async {
   throw Exception("Failed to fetch");
 }
 void main() async {
-  final teams = await fetchTeamsByName("tea");
+  final teams = await fetchTeamsByNameAndSport("tea",2,1);
   print(teams.length);
 }

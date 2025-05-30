@@ -39,3 +39,22 @@ Future<ReservationResponse> fetchInitReservation() async {
   throw Exception("Failed to fetch sport facilities");
 }
 
+
+Future<bool> saveReservation(int time_slot_id ) async {
+  print("Calling add reservation");
+  final url = Uri.parse("$RESERVATION_URL");
+  final response = await http.post(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: jsonEncode({
+      'time_slot_id': time_slot_id,
+      'user_id': 1, 
+    }));
+  if (response.statusCode == 201) {
+    return true;
+  }
+  return false;
+}

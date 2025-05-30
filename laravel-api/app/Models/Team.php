@@ -35,4 +35,15 @@ class Team extends Model
     {
         return $this->hasMany(TeamMatch::class);
     }
+    public function players()
+    {
+        return $this->belongsToMany(User::class, 'user_team_links');
+    }
+
+    public function captain()
+    {
+        return $this->hasOne(UserTeamLink::class)
+            ->where('is_captain', true)
+            ->where('has_left_team', false);
+    }
 }

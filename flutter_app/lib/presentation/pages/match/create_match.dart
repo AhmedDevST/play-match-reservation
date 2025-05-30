@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/core/services/Team/team_service.dart';
 import 'package:flutter_app/core/services/match/match_service.dart';
-import 'package:flutter_app/models/SportFacility.dart';
+import 'package:flutter_app/models/Game.dart';
+import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/models/Team.dart';
 import 'package:easy_debounce/easy_debounce.dart';
-
+import 'package:flutter_app/presentation/pages/reservation/BookingSummary.dart';
+import 'package:flutter_app/presentation/widgets/buttons/PrimaryButton.dart';
 //import 'package:flutter_app/presentation/pages/match/match_details_page.dart';
 
 class CreateMatch extends StatefulWidget {
-  final SportFacility facility;
-  const CreateMatch({Key? key, required this.facility}) : super(key: key);
+  final Reservation reservation;
+  const CreateMatch({Key? key, required this.reservation}) : super(key: key);
 
   @override
   State<CreateMatch> createState() => _CreateMatchState();
 }
 
-class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderStateMixin {
+class _CreateMatchState extends State<CreateMatch>
+    with SingleTickerProviderStateMixin {
   Team? selectedTeam;
   bool isPrivateMatch = true;
   Team? invitedTeam;
@@ -28,7 +31,6 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
   bool isLoading = false;
   bool isSearching = false;
   bool loadingTeams = false;
-
 
   @override
   void initState() {
@@ -54,7 +56,7 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
 
   Future<void> initTheGame() async {
     setState(() => isLoading = true);
-    final LoaduersTeams = await initGame(widget.facility.id);
+    final LoaduersTeams = await initGame(widget.reservation.facility.id);
     setState(() {
       isLoading = false;
       uersTeams = LoaduersTeams;
@@ -62,8 +64,8 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
     });
   }
 
-  Future<void> _filterTeams(String query) async {
-    if (query.trim().isEmpty) {
+  Future<void> _filterTeams(String name) async {
+    if (name.trim().isEmpty) {
       setState(() {
         filteredTeams = [];
         isSearching = false;
@@ -73,7 +75,8 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
     setState(() {
       loadingTeams = true;
     });
-    final LoaduersTeams = await fetchTeamsByName(query);
+    final LoaduersTeams = await fetchTeamsByNameAndSport(
+        name, selectedTeam?.sport.id ?? 0, selectedTeam?.id ?? 0);
     setState(() {
       filteredTeams = LoaduersTeams;
       isSearching = true;
@@ -96,6 +99,35 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
       _searchController.clear();
       _animationController.reverse();
     });
+  }
+
+  void _confirmMatch() {
+    if (selectedTeam == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a team')),
+      );
+      return;
+    }
+    if (isPrivateMatch && invitedTeam == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please invite a team for private match')),
+      );
+      return;
+    }
+    final Game newGame = Game(
+      id: 0,
+      team1: selectedTeam!,
+      opponentTeam: isPrivateMatch ? invitedTeam : null,
+      type: isPrivateMatch ? GameType.private : GameType.public,
+    );
+    widget.reservation.game = newGame;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            BookingSummaryScreen(reservation: widget.reservation),
+      ),
+    );
   }
 
   @override
@@ -136,7 +168,10 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
                         const SizedBox(height: 24),
                         _buildWarningMessage(),
                         const SizedBox(height: 32),
-                        _buildNextButton(),
+                        PrimaryButton(
+                          label: 'Confirm',
+                          onPressed: _confirmMatch,
+                        ),
                       ],
                     ),
                   ),
@@ -183,12 +218,40 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
           items: uersTeams
               .map((team) => DropdownMenuItem<Team>(
                     value: team,
-                    child: Text(team.name),
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: CircleAvatar(
+                              radius: 15,
+                              backgroundColor: Colors.grey.shade200,
+                              backgroundImage: NetworkImage(team.fullImagePath),
+                              onBackgroundImageError: (_, __) {}),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(team.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                              Text(
+                                team.sport.name,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ))
               .toList(),
           onChanged: (value) {
             setState(() {
               selectedTeam = value;
+              invitedTeam = null;
+              _searchController.clear();
             });
           },
         ),
@@ -324,28 +387,36 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
                   ],
                 ),
                 child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: filteredTeams.length,
-                  itemBuilder: (context, index) {
-                    final team = filteredTeams[index];
-                    return ListTile(
-                      title: Text(team.name),
-                      trailing: ElevatedButton(
-                        onPressed: () => _inviteTeam(team),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                    shrinkWrap: true,
+                    itemCount: filteredTeams.length,
+                    itemBuilder: (context, index) {
+                      final team = filteredTeams[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 8.0), // Adjust space here
+                        child: ListTile(
+                          title: Text(team.name),
+                          subtitle: Text(team.sport.name),
+                          leading: CircleAvatar(
+                            backgroundImage: NetworkImage(team.fullImagePath),
+                            radius: 24,
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () => _inviteTeam(team),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text(
+                              'Invite',
+                              style: TextStyle(color: Colors.white),
+                            ),
                           ),
                         ),
-                        child: const Text(
-                          'Invite',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                      );
+                    }),
               ),
             ),
         ],
@@ -459,49 +530,6 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildNextButton() {
-    return Container(
-      width: double.infinity,
-      height: 56,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).primaryColor.withOpacity(0.3),
-            spreadRadius: 1,
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: () {
-          // Navigator.push(
-          //context,
-          //MaterialPageRoute(
-          //builder: (context) => const MatchDetailsPage(),
-          //),
-          //);
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Theme.of(context).primaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-        ),
-        child: const Text(
-          'Confirm',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
       ),
     );
   }

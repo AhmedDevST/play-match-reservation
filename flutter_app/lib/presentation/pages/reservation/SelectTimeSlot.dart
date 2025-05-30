@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/models/SportFacility.dart';
+import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/models/TimeSlot.dart';
 import 'package:flutter_app/models/TimeZone.dart';
 import 'package:flutter_app/core/services/timeSlots/time_slot_service.dart';
 import 'package:flutter_app/presentation/pages/match/create_match.dart';
+import 'package:flutter_app/presentation/pages/reservation/BookingSummary.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/date_selector.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/timezone_selector.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/slot_filter.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/time_slot_list.dart';
 import 'package:flutter_app/presentation/widgets/SelectTimeSlot/select_button.dart';
-import 'package:lottie/lottie.dart';
-import 'package:material_dialogs/material_dialogs.dart';
-import 'package:material_dialogs/widgets/buttons/icon_button.dart';
-import 'package:material_dialogs/widgets/buttons/icon_outline_button.dart';
-import 'package:flutter_app/presentation/widgets/match/CreateMatchDialog.dart';
+import 'package:flutter_app/presentation/widgets/dialog/CreateMatchDialog.dart';
 
 class SelectTimeSlot extends StatefulWidget {
-  final SportFacility facility;
+  final Reservation reservation;
 
   const SelectTimeSlot({
     Key? key,
-    required this.facility,
+    required this.reservation,
   }) : super(key: key);
 
   @override
@@ -46,7 +43,8 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
 
   Future<void> initTimeSlots() async {
     setState(() => isLoading = true);
-    final loadedTimeSlots = await fetchInitTimeSlots(widget.facility.id);
+    final loadedTimeSlots =
+        await fetchInitTimeSlots(widget.reservation.facility.id);
     setState(() {
       isLoading = false;
       timeSlots = loadedTimeSlots.timeSlots;
@@ -59,7 +57,7 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
   Future<void> loadTimeSlots() async {
     setState(() => isLoading = true);
     List<TimeSlot> loadedTimeSlots = await fetchTimeSlots(
-        widget.facility.id, customDates[selectedDateIndex]);
+        widget.reservation.facility.id, customDates[selectedDateIndex]);
     setState(() {
       isLoading = false;
       timeSlots = loadedTimeSlots;
@@ -88,16 +86,25 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
 
   void _onSelectPressed() async {
     if (selectedTimeSlot != null) {
+      widget.reservation.timeSlot = selectedTimeSlot;
+      widget.reservation.game = null; 
+      //check if user is a captain of a team of available sports in this facility
       final result = await showDialog<bool>(
         context: context,
         builder: (context) => const CreateMatchDialog(),
       );
-
       if (result == true) {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CreateMatch(facility: widget.facility),
+            builder: (context) => CreateMatch(reservation: widget.reservation),
+          ),
+        );
+      }else {
+         Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BookingSummaryScreen(reservation: widget.reservation),
           ),
         );
       }
@@ -109,9 +116,11 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.facility.name,
-          style: const TextStyle(color: Colors.black),
+          widget.reservation.facility.name,
+          style: TextStyle(color: Colors.white),
+          
         ),
+        backgroundColor: Theme.of(context).primaryColor,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

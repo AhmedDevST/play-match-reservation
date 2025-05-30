@@ -33,4 +33,8 @@ class Invitation extends Model
     {
         return $this->belongsTo(User::class, 'receiver_id');
     }
+    public function invitabl()
+    {
+        return $this->morphTo();
+    }
 }

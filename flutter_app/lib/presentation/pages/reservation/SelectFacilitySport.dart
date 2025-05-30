@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/core/services/reservation/reservation_service.dart';
 import 'package:flutter_app/core/services/facility/facility_service.dart';
 import 'package:flutter_app/models/Sport.dart';
+import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/models/SportFacility.dart';
 import 'package:flutter_app/presentation/widgets/SportFacility/SportFacilityCard.dart';
 import 'package:flutter_app/presentation/widgets/SportFacility/sport_filter_chip.dart';
@@ -16,9 +17,9 @@ class SelectFacilitySport extends StatefulWidget {
 }
 
 class _SelectFacilitySportState extends State<SelectFacilitySport> {
-  late  List<Sport> sports;
-  late  List<SportFacility> sportFacilities;
-  late  Sport selectedSport;
+  late List<Sport> sports;
+  late List<SportFacility> sportFacilities;
+  late Sport selectedSport;
   bool isLoading = false;
   @override
   void initState() {
@@ -26,10 +27,9 @@ class _SelectFacilitySportState extends State<SelectFacilitySport> {
     initReservation();
   }
 
-Future<void> initReservation() async {
+  Future<void> initReservation() async {
     isLoading = true;
-    final loadedReservationData =
-        await fetchInitReservation();
+    final loadedReservationData = await fetchInitReservation();
     setState(() {
       isLoading = false;
       sports = loadedReservationData.sports;
@@ -37,6 +37,7 @@ Future<void> initReservation() async {
       selectedSport = loadedReservationData.defaultSport;
     });
   }
+
   Future<void> loadSportFacilityBySport(int id) async {
     isLoading = true;
     List<SportFacility> loadedSportFacilityData =
@@ -45,94 +46,104 @@ Future<void> initReservation() async {
       isLoading = false;
       sportFacilities = loadedSportFacilityData;
     });
-  } 
+  }
+
+  void _handleFacilitySelection(SportFacility selectedFacility) {
+    final newReservation = Reservation.init(
+      userId: 1,
+      facility: selectedFacility,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SelectTimeSlot(reservation: newReservation),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sports Facilities',style: TextStyle(color: Colors.white),),
+        title: const Text(
+          'Sports Facilities',
+          style: TextStyle(color: Colors.white),
+        ),
         elevation: 0,
         backgroundColor: Theme.of(context).primaryColor,
       ),
-      body: isLoading 
-        ? const Center(
-            child: CircularProgressIndicator(),
-          )
-        : Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Theme.of(context).primaryColor,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Select Sport',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: sports.map((Sport sport) {
-                          return SportFilterChip(
-                            label: sport.name,
-                            isSelected: selectedSport.id == sport.id,
-                            onSelected: (bool selected) {
-                              setState(() {
-                                selectedSport = sport;
-                                loadSportFacilityBySport(sport.id);
-                              });
-                            },
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
+      body: isLoading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : Column(
+              children: [
+                Container(
                   padding: const EdgeInsets.all(16),
-                  itemCount: sportFacilities.length,
-                  itemBuilder: (context, index) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: SportFacilityCard(
-                        sportFacility: sportFacilities[index],
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => FacilityDetailsPage(
-                                sportFacility: sportFacilities[index],
-                              ),
-                            ),
-                          );
-                        },
-                        onSelectTap: () {
-                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SelectTimeSlot(
-                                facility: sportFacilities[index],
-                              ),
-                            ),
-                          );
-                        },
+                  color: Theme.of(context).primaryColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Select Sport',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    );
-                  },
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
+                          children: sports.map((Sport sport) {
+                            return SportFilterChip(
+                              label: sport.name,
+                              isSelected: selectedSport.id == sport.id,
+                              onSelected: (bool selected) {
+                                setState(() {
+                                  selectedSport = sport;
+                                  loadSportFacilityBySport(sport.id);
+                                });
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: sportFacilities.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: SportFacilityCard(
+                          sportFacility: sportFacilities[index],
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FacilityDetailsPage(
+                                  sportFacility: sportFacilities[index],
+                                ),
+                              ),
+                            );
+                          },
+                          onSelectTap: () {
+                            _handleFacilitySelection(sportFacilities[index]);
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
     );
   }
-} 
+}

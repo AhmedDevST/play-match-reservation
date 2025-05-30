@@ -12,9 +12,16 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+Route::get('/test', function (Request $request) {
+    return [
+        'message' => 'hello world',
+    ];
+});
+
 
 // Reservation
 Route::get('/reservation/init', [ReservationController::class, 'init']);
+Route::post('/reservation', [ReservationController::class, 'store']);
 
 // Get facilities
 Route::get('/sport-facilities', [SportFacilityController::class, 'index']);
