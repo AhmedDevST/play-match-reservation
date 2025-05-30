@@ -1,19 +1,22 @@
+import 'package:flutter_app/models/Sport.dart';
 import 'package:flutter_app/core/config/apiConfig.dart';
 import 'package:flutter_app/models/Sport.dart';
 class Team {
   final int id;
   final String name;
-  final String? image;
   final int totalScore;
+  final String? image;
   final double averageRating;
+  final Sport sport;
   final Sport sport;
 
   Team({
     required this.id,
     required this.name,
-    this.image,
     required this.totalScore,
+    this.image,
     required this.averageRating,
+    required this.sport,
     required this.sport,
   });
 
@@ -21,6 +24,7 @@ class Team {
     return Team(
       id: json['id'],
       name: json['name'],
+      totalScore: json['total_score'] ?? 0,
       image: json['image'],
       totalScore: json['total_score'],
       averageRating: (json['average_rating'] as num).toDouble(),
@@ -32,11 +36,15 @@ class Team {
     return {
       'id': id,
       'name': name,
-      'image': image,
       'total_score': totalScore,
+      'image': image,
       'average_rating': averageRating,
+      'sport': sport.toJson(),
     };
   }
-  String get fullImagePath =>
-      "$API_URL$image";
+
+  String get fullImagePath {
+    if (image == null) return '';
+    return "$API_URL$image";
+  }
 }

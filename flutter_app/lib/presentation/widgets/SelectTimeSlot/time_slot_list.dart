@@ -11,13 +11,13 @@ class TimeSlotsList extends StatelessWidget {
   final Function(TimeSlot) onTimeSlotSelected;
 
   const TimeSlotsList({
-    Key? key,
+    super.key,
     required this.timeSlots,
     required this.selectedTimeZone,
     required this.slotFilter,
     required this.selectedTimeSlot,
     required this.onTimeSlotSelected,
-  }) : super(key: key);
+  });
 
   List<TimeSlot> get filteredSlots {
     return timeSlots

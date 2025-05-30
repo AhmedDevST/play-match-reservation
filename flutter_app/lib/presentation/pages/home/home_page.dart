@@ -2,53 +2,54 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin {
   // Pour les animations
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   // Pour le carrousel d'images
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  
+
   // Exemple d'images pour le carrousel
   final List<String> _imageList = [
     'assets/images/background.png',
     'assets/images/background.png',
     'assets/images/background.png',
   ];
-  
+
   // Pour la barre de navigation
   int _selectedIndex = 0;
-  
+
   // Timer pour changer automatiquement les images
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    
+
     // Configuration de l'animation
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOut,
       ),
     );
-    
+
     _animationController.forward();
-    
+
     // Configuration du timer pour le carrousel d'images
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (_currentPage < _imageList.length - 1) {
@@ -56,7 +57,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       } else {
         _currentPage = 0;
       }
-      
+
       if (_pageController.hasClients) {
         _pageController.animateToPage(
           _currentPage,
@@ -83,34 +84,36 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           children: [
             // En-tête avec profil et chat
             _buildHeader(),
-            
+
             // Contenu principal
             Expanded(
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.only(bottom: 20),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Titre de bienvenue
                     _buildWelcomeTitle(),
-                    
+
                     // Carrousel d'images
                     _buildImageCarousel(),
-                    
+
                     // Filtres rapides
                     _buildQuickFilters(),
-                    
+
                     // Statistiques de l'utilisateur
                     _buildUserStats(),
-                    
+
+                    // Section Équipes
+                    _buildTeamsSection(),
+
                     // Réservations à venir
                     _buildUpcomingReservations(),
                   ],
                 ),
               ),
             ),
-            
+
             // Barre de navigation inférieure
             _buildBottomNavBar(),
           ],
@@ -163,7 +166,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             child: CircleAvatar(
-                              backgroundColor: const Color(0xFF1E88E5).withOpacity(0.2),
+                              backgroundColor:
+                                  const Color(0xFF1E88E5).withOpacity(0.2),
                               child: const Text(
                                 'M',
                                 style: TextStyle(
@@ -200,7 +204,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     ),
                   ],
                 ),
-                
+
                 // Icône de chat
                 Container(
                   decoration: BoxDecoration(
@@ -264,7 +268,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           child: Transform.translate(
             offset: Offset(0, 20 - 20 * _fadeAnimation.value),
             child: Padding(
-              padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
+              padding: const EdgeInsets.only(
+                  left: 20, right: 20, top: 20, bottom: 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -352,7 +357,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     },
                                   ),
                                 ),
-                                
+
                                 // Overlay dégradé
                                 Positioned.fill(
                                   child: Container(
@@ -369,14 +374,15 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     ),
                                   ),
                                 ),
-                                
+
                                 // Texte d'information
                                 Positioned(
                                   bottom: 15,
                                   left: 15,
                                   right: 15,
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         'Terrain ${index + 1}',
@@ -398,7 +404,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                           Text(
                                             'Casablanca, Maroc',
                                             style: TextStyle(
-                                              color: Colors.white.withOpacity(0.9),
+                                              color:
+                                                  Colors.white.withOpacity(0.9),
                                               fontSize: 12,
                                             ),
                                           ),
@@ -407,7 +414,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                                     ],
                                   ),
                                 ),
-                                
+
                                 // Bouton de réservation
                                 Positioned(
                                   top: 15,
@@ -438,7 +445,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                       },
                     ),
                   ),
-                  
+
                   // Indicateurs de page
                   const SizedBox(height: 10),
                   Row(
@@ -474,7 +481,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       {'icon': Icons.sports_volleyball, 'label': 'Handball'},
       {'icon': Icons.filter_list, 'label': 'Plus'},
     ];
-    
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -552,7 +559,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       {'icon': Icons.access_time, 'value': '24h', 'label': 'Temps de jeu'},
       {'icon': Icons.people, 'value': '8', 'label': 'Amis'},
     ];
-    
+
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -646,6 +653,110 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
     );
   }
 
+  // Section Équipes
+  Widget _buildTeamsSection() {
+    return AnimatedBuilder(
+      animation: _animationController,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 55 - 55 * _fadeAnimation.value),
+            child: Container(
+              margin: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: InkWell(
+                onTap: () {
+                  Navigator.pushNamed(context, '/team-dashboard');
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Mes Équipes',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E88E5).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_forward,
+                            color: Color(0xFF1E88E5),
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E88E5).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.group,
+                            color: Color(0xFF1E88E5),
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Gérer vos équipes',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.grey.shade800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Voir les membres et les matchs',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // Réservations à venir
   Widget _buildUpcomingReservations() {
     return AnimatedBuilder(
@@ -691,7 +802,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                     ],
                   ),
                   const SizedBox(height: 15),
-                  
+
                   // Liste des réservations à venir
                   _buildReservationItem(
                     'Terrain de Football',
@@ -804,9 +915,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       {'icon': Icons.calendar_today, 'label': 'Réservations'},
       {'icon': Icons.logout, 'label': 'Déconnexion'},
     ];
-    
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -818,14 +929,17 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: List.generate(items.length, (index) {
           return InkWell(
             onTap: () {
-              if (index == 4) { // Si c'est le bouton de déconnexion
+              if (index == 4) {
+                // Si c'est le bouton de déconnexion
                 // Naviguer vers la page initiale (LandingPage)
-                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-              } else if (index == 1) { // Si c'est le bouton des amis
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/', (route) => false);
+              } else if (index == 1) {
+                // Si c'est le bouton des amis
                 // Naviguer vers la page des amis
                 Navigator.of(context).pushNamed('/friends');
               } else {
@@ -842,16 +956,16 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                   color: _selectedIndex == index
                       ? const Color(0xFF1E88E5)
                       : Colors.grey.shade400,
-                  size: 24,
+                  size: 22,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   items[index]['label'],
                   style: TextStyle(
                     color: _selectedIndex == index
                         ? const Color(0xFF1E88E5)
                         : Colors.grey.shade400,
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: _selectedIndex == index
                         ? FontWeight.bold
                         : FontWeight.normal,
@@ -864,4 +978,4 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
       ),
     );
   }
-} 
+}

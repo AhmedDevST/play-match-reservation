@@ -10,7 +10,7 @@ import 'SelectTimeSlot.dart';
 import 'package:flutter_app/presentation/pages/SportFacility/FacilityDetailsPage.dart';
 
 class SelectFacilitySport extends StatefulWidget {
-  const SelectFacilitySport({Key? key}) : super(key: key);
+  const SelectFacilitySport({super.key});
 
   @override
   State<SelectFacilitySport> createState() => _SelectFacilitySportState();

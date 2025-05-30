@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/presentation/pages/home/home_page.dart';
 import 'package:flutter_app/presentation/pages/login_registration/Login.dart';
+import 'package:flutter_app/presentation/pages/login_registration/SignUp.dart';
 
 class LandingPage extends StatelessWidget {
-  const LandingPage({Key? key}) : super(key: key);
+  const LandingPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +80,7 @@ class LandingPage extends StatelessWidget {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const Login()),
+                        MaterialPageRoute(builder: (context) => const SignUp()),
                       );
                       // TODO: Navigation vers la page d'inscription
                     },
@@ -94,7 +94,7 @@ class LandingPage extends StatelessWidget {
                       elevation: 0,
                     ),
                     child: const Text(
-                      'Créer un compte1',
+                      'Créer un compte ',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -108,7 +108,7 @@ class LandingPage extends StatelessWidget {
                    onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const HomePage()),
+                        MaterialPageRoute(builder: (context) => const Login()),
                       );
                       // TODO: Navigation vers la page de connexion
                     },
@@ -121,7 +121,7 @@ class LandingPage extends StatelessWidget {
                       ),
                     ),
                     child: const Text(
-                      'Se connecter',
+                      'Se connecter ',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,

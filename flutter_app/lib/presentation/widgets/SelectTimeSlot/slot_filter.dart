@@ -7,11 +7,11 @@ class SlotFilter extends StatelessWidget {
   final Function(String) onFilterChanged;
 
   const SlotFilter({
-    Key? key,
+    super.key,
     required this.selectedTimeZone,
     required this.slotFilter,
     required this.onFilterChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
