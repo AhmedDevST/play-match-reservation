@@ -49,13 +49,48 @@ class TeamInvitationController extends Controller
             ], 400);
         }
 
-        // Créer l'invitation
+        // Récupérer l'équipe courante du capitaine avec son sport
+        $team = Team::with('sport')->whereHas('userTeamLinks', function ($query) {
+            $query->where('user_id', 1) // Auth::id() pour plus tard
+                  ->where('is_captain', true)
+                  ->where('has_left_team', false);
+        })->first();
+
+        if (!$team) {
+            return response()->json([
+                'message' => 'Équipe non trouvée'
+            ], 404);
+        }
+
+        // Vérifier le nombre actuel de membres + invitations en attente
+        $currentMembers = $team->userTeamLinks()
+            ->where('has_left_team', false)
+            ->count();
+
+        $pendingInvitations = Invitation::where('invitable_type', Team::class)
+            ->where('invitable_id', $team->id)
+            ->where('status', InvitationStatus::PENDING)
+            ->count();
+
+        $totalPotentialMembers = $currentMembers + $pendingInvitations;
+
+        if ($totalPotentialMembers >= $team->sport->max_players) {
+            return response()->json([
+                'message' => "L'équipe a atteint sa capacité maximale de {$team->sport->max_players} joueurs pour ce sport",
+                'current_members' => $currentMembers,
+                'pending_invitations' => $pendingInvitations,
+                'max_players' => $team->sport->max_players
+            ], 400);
+        }
+
+        // Créer l'invitation avec la relation morphTo
         $invitation = Invitation::create([
-            // 'sender_id' => Auth::id(),
-            'sender_id' => 1, // Utiliser Auth::user() pour plus de clarté
+            'sender_id' => 1, // Auth::id() pour plus tard
             'receiver_id' => $request->receiver_id,
             'type' => TypeInvitation::TEAM,
-            'status' => InvitationStatus::PENDING
+            'status' => InvitationStatus::PENDING,
+            'invitable_type' => Team::class,
+            'invitable_id' => $team->id
         ]);
 
         return response()->json([
@@ -91,7 +126,7 @@ class TeamInvitationController extends Controller
         ]);
 
         // Vérifier si l'utilisateur est bien le destinataire
-        if ($invitation->receiver_id !== Auth::id()) {
+        if ($invitation->receiver_id !== 2) {
             return response()->json([
                 'message' => 'Non autorisé à répondre à cette invitation'
             ], 403);
@@ -110,19 +145,37 @@ class TeamInvitationController extends Controller
 
         if ($newStatus === InvitationStatus::ACCEPTED) {
             // Ajouter l'utilisateur à l'équipe du capitaine
-            $team = Team::whereHas('userTeamLinks', function($query) use ($invitation) {
+            $team = Team::with('sport')->whereHas('userTeamLinks', function($query) use ($invitation) {
                 $query->where('user_id', $invitation->sender_id)
                     ->where('is_captain', true);
             })->first();
 
-            if ($team) {
-                $team->userTeamLinks()->create([
-                    'user_id' => Auth::id(),
+            if (!$team) {
+                return response()->json([
+                    'message' => 'Équipe non trouvée'
+                ], 404);
+            }
+
+            // Vérifier le nombre actuel de membres
+            $currentMembers = $team->userTeamLinks()
+                ->where('has_left_team', false)
+                ->count();
+
+            if ($currentMembers >= $team->sport->max_players) {
+                return response()->json([
+                    'message' => "Désolé, l'équipe est complète ({$team->sport->max_players} joueurs maximum pour ce sport)",
+                    'current_members' => $currentMembers,
+                    'max_players' => $team->sport->max_players
+                ], 400);
+            }
+
+            $team->userTeamLinks()->create([
+                'user_id' => 2,// Auth::id() pour l'utilisateur connecté
+                    'team_id' => $team->id,
                     'start_date' => now(),
                     'is_captain' => false,
                     'has_left_team' => false
                 ]);
-            }
         }
 
         return response()->json([
@@ -168,5 +221,38 @@ class TeamInvitationController extends Controller
         ]);
     }
 
+    /**
+     * Get all users who are neither team members nor invited
+     */
+    public function getUsersNotInTeamOrInvited(Team $team)
+    {
+        // Vérifier si l'équipe existe
+        if (!$team) {
+            return response()->json([
+                'message' => 'Équipe non trouvée'
+            ], 404);
+        }
 
+        // Récupérer les IDs des membres actuels de l'équipe
+        $teamMemberIds = $team->userTeamLinks()
+            ->where('has_left_team', false)
+            ->pluck('user_id');
+
+        // Récupérer les IDs des utilisateurs déjà invités
+        $invitedUserIds = Invitation::where('invitable_type', Team::class)
+            ->where('invitable_id', $team->id)
+            ->where('type', TypeInvitation::TEAM)
+            ->where('status', InvitationStatus::PENDING)
+            ->pluck('receiver_id');
+
+        // Récupérer les utilisateurs qui ne sont ni membres ni invités
+        $availableUsers = User::whereNotIn('id', $teamMemberIds)
+            ->whereNotIn('id', $invitedUserIds)
+            ->get();
+
+        return response()->json([
+            'available_users' => $availableUsers,
+            'team' => $team->name
+        ]);
+    }
 }

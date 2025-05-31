@@ -7,6 +7,7 @@ use App\Enums\TypeInvitation;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Invitation extends Model
 {
@@ -16,7 +17,9 @@ class Invitation extends Model
         'sender_id',
         'receiver_id',
         'type',
-        'status'
+        'status',
+        'invitable_type',
+        'invitable_id'
     ];
 
     protected $casts = [
@@ -34,5 +37,8 @@ class Invitation extends Model
         return $this->belongsTo(User::class, 'receiver_id');
     }
 
-
+    public function invitable(): MorphTo
+    {
+        return $this->morphTo();
+    }
 }

@@ -1,1 +1,1 @@
-const API_URL = "http://localhost:8000";
+const String API_URL = 'http://localhost:8000'; // Remplacez par votre URL d'API

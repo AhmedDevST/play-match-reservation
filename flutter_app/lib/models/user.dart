@@ -28,4 +28,6 @@ class User {
       'profile_picture': profileImage,
     };
   }
+
+  
 }

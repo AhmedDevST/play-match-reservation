@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Team extends Model
 {
@@ -24,6 +25,19 @@ class Team extends Model
         'total_score' => 'integer',
     ];
 
+    protected $appends = ['full_image_path'];
+
+    public function getFullImagePathAttribute()
+    {
+        if (!$this->image) {
+            return null;
+        }
+        if (str_starts_with($this->image, 'http')) {
+            return $this->image;
+        }
+        return env('APP_URL') . '/storage/' . ltrim($this->image, '/');
+    }
+
     public function userTeamLinks(): HasMany
     {
         return $this->hasMany(UserTeamLink::class);
@@ -35,5 +49,9 @@ class Team extends Model
     public function teamMatches(): HasMany
     {
         return $this->hasMany(TeamMatch::class);
+    }
+    public function invitations(): MorphMany
+    {
+        return $this->morphMany(Invitation::class, 'invitable');
     }
 }

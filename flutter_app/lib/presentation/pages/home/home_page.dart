@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
+class _HomePageState extends ConsumerState<HomePage>
     with SingleTickerProviderStateMixin {
   // Pour les animations
   late AnimationController _animationController;
@@ -936,6 +938,8 @@ class _HomePageState extends State<HomePage>
               if (index == 4) {
                 // Si c'est le bouton de déconnexion
                 // Naviguer vers la page initiale (LandingPage)
+                ref.read(authProvider.notifier).logout();
+
                 Navigator.of(context)
                     .pushNamedAndRemoveUntil('/', (route) => false);
               } else if (index == 1) {

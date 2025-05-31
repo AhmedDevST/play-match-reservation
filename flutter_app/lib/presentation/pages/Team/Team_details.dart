@@ -16,6 +16,13 @@ class TeamDetails extends ConsumerStatefulWidget {
 
 class _TeamDetailsState extends ConsumerState<TeamDetails> {
   @override
+  void initState() {
+    super.initState();
+    // Forcer le rechargement des données de l'équipe
+    Future.microtask(() => ref.read(teamsProvider.notifier).loadTeamsForTest());
+  }
+
+  @override
   Widget build(BuildContext context) {
     final teams = ref.watch(teamsProvider);
     final teamLink = teams.firstWhere((team) => team.team.id == widget.teamId);

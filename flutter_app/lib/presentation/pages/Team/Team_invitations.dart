@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/User.dart';
+import 'package:flutter_app/models/Invitation.dart';
 import 'package:flutter_app/core/services/invitation/TeamInvitationService.dart';
-import 'package:flutter_app/core/services/User/UserService.dart';
-import 'package:flutter_app/core/services/invitation/TeamInvitationService.dart';
-import 'package:flutter_app/core/services/User/UserService.dart';
+import 'package:flutter_app/core/config/apiConfig.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class TeamInvitations extends StatefulWidget {
   final int teamId;
@@ -22,34 +24,97 @@ class _TeamInvitationsState extends State<TeamInvitations>
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
   final TeamInvitationService _invitationService = TeamInvitationService();
-  final UserService _userService = UserService();
 
-  Map<int, bool> _invitedUsers = {};
-  List<User> _friends = [];
-  List<User> _otherUsers = [];
+  List<User> _availableUsers = [];
+  List<User> _allUsers = [];
+  List<User> _teamMembers = [];
+  List<User> _invitedUsers = [];
   bool _isLoadingUsers = false;
+  Set<int> _invitedUserIds = {};
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
-    _fetchFriends();
-    _loadAllUsers(); // Charger tous les utilisateurs au démarrage
+    _loadAvailableUsers();
   }
 
   void _handleTabChange() {
     if (_tabController.index == 1 && _searchController.text.isNotEmpty) {
-      _searchUsers(_searchController.text);
+      _filterUsers(_searchController.text);
     }
   }
 
-  Future<void> _loadAllUsers() async {
+  Future<void> _loadAvailableUsers() async {
     setState(() => _isLoadingUsers = true);
     try {
-      final users = await _userService.getAllUsers();
-      if (mounted) {
-        setState(() => _otherUsers = users);
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      // Charger tous les utilisateurs
+      final usersResponse = await http.get(
+        Uri.parse('${API_URL}/api/users'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (usersResponse.statusCode == 200) {
+        final data = jsonDecode(usersResponse.body);
+        _allUsers =
+            (data['users'] as List).map((u) => User.fromJson(u)).toList();
+
+        // Charger les membres de l'équipe
+        final teamResponse = await http.get(
+          Uri.parse('${API_URL}/api/teams/${widget.teamId}/members'),
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+
+        if (teamResponse.statusCode == 200) {
+          final teamData = jsonDecode(teamResponse.body);
+          _teamMembers = (teamData['team_members'] as List)
+              .map((m) => User.fromJson(m))
+              .toList();
+        }
+
+        // Charger les utilisateurs invités
+        final invitedResponse = await http.get(
+          Uri.parse('${API_URL}/api/team/${widget.teamId}/invited-users'),
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        );
+
+        if (invitedResponse.statusCode == 200) {
+          final invitedData = jsonDecode(invitedResponse.body);
+          _invitedUsers = (invitedData['invited_users'] as List)
+              .map((i) => User.fromJson(i['receiver']))
+              .toList();
+          _invitedUserIds = _invitedUsers.map((u) => u.id).toSet();
+        }
+
+        // Filtrer les utilisateurs disponibles
+        if (mounted) {
+          setState(() {
+            _availableUsers = _allUsers
+                .where((user) =>
+                    !_teamMembers.any((member) => member.id == user.id) &&
+                    !_invitedUsers.any((invited) => invited.id == user.id))
+                .toList();
+            _isLoadingUsers = false;
+          });
+        }
+      } else {
+        throw Exception('Erreur lors du chargement des utilisateurs');
       }
     } catch (e) {
       if (mounted) {
@@ -57,53 +122,40 @@ class _TeamInvitationsState extends State<TeamInvitations>
           SnackBar(
               content: Text('Erreur lors du chargement des utilisateurs: $e')),
         );
-      }
-    } finally {
-      if (mounted) {
         setState(() => _isLoadingUsers = false);
       }
     }
   }
 
-  Future<void> _fetchFriends() async {
-    setState(() => _isLoadingUsers = true);
-    try {
-      // Cette méthode sera implémentée plus tard
-      _friends = [];
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur lors du chargement des amis: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingUsers = false);
-      }
+  void _filterUsers(String query) {
+    if (query.isEmpty) {
+      setState(() => _availableUsers = _allUsers
+          .where((user) =>
+              !_teamMembers.any((member) => member.id == user.id) &&
+              !_invitedUsers.any((invited) => invited.id == user.id))
+          .toList());
+      return;
     }
+
+    final filtered = _availableUsers
+        .where((user) =>
+            user.name.toLowerCase().contains(query.toLowerCase()) ||
+            user.email.toLowerCase().contains(query.toLowerCase()))
+        .toList();
+
+    setState(() => _availableUsers = filtered);
   }
 
-  void _searchUsers(String query) {
-    if (_tabController.index == 0) return;
-
+  Future<void> _sendInvitation(User user) async {
     setState(() {
-      if (query.isEmpty) {
-        _loadAllUsers(); // Recharger tous les utilisateurs si la recherche est vide
-      } else {
-        // Filtrer les utilisateurs localement
-        _otherUsers = _otherUsers
-            .where((user) =>
-                user.name.toLowerCase().contains(query.toLowerCase()) ||
-                user.email.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
+      _invitedUserIds.add(user.id);
+      _invitedUsers.add(user);
+      _availableUsers.removeWhere((u) => u.id == user.id);
     });
-  }
 
-  Future<void> _inviteUser(User user) async {
-    setState(() => _invitedUsers[user.id] = true);
     try {
-      await _invitationService.sendInvitation(user);
+      await _invitationService.sendInvitation(user, widget.teamId);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -113,8 +165,13 @@ class _TeamInvitationsState extends State<TeamInvitations>
         );
       }
     } catch (e) {
+      // En cas d'erreur, rétablir l'état précédent
       if (mounted) {
-        setState(() => _invitedUsers[user.id] = false);
+        setState(() {
+          _invitedUserIds.remove(user.id);
+          _invitedUsers.removeWhere((u) => u.id == user.id);
+          _availableUsers.add(user);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erreur lors de l\'envoi de l\'invitation: $e'),
@@ -211,7 +268,7 @@ class _TeamInvitationsState extends State<TeamInvitations>
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
-              onChanged: _searchUsers,
+              onChanged: _filterUsers,
             ),
           ),
           Expanded(
@@ -237,7 +294,7 @@ class _TeamInvitationsState extends State<TeamInvitations>
       );
     }
 
-    final users = isFriends ? _friends : _otherUsers;
+    final users = isFriends ? _teamMembers : _availableUsers;
 
     if (users.isEmpty) {
       return Center(
@@ -278,7 +335,7 @@ class _TeamInvitationsState extends State<TeamInvitations>
       itemCount: users.length,
       itemBuilder: (context, index) {
         final user = users[index];
-        final bool isInvited = _invitedUsers[user.id] ?? false;
+        final bool isInvited = _invitedUsers.contains(user);
 
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
@@ -355,7 +412,7 @@ class _TeamInvitationsState extends State<TeamInvitations>
                     ),
                   )
                 : ElevatedButton(
-                    onPressed: () => _inviteUser(user),
+                    onPressed: () => _sendInvitation(user),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E88E5),
                       foregroundColor: Colors.white,

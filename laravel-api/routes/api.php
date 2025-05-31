@@ -70,4 +70,9 @@ Route::prefix('teams/invitations')->group(function () {
     // Get invited users for a specific team
     Route::get('/team/{team}/invited-users', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getInvitedUsers']);
 
+Route::middleware('auth:sanctum')->group(function () {
+    // Team Invitations
+    Route::get('/teams/{team}/available-users', [TeamInvitationController::class, 'getUsersNotInTeamOrInvited']);
+});
+
 

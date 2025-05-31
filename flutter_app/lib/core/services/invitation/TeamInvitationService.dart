@@ -4,21 +4,27 @@ import 'package:flutter_app/models/Invitation.dart';
 import 'package:flutter_app/models/User.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const TEAM_INVITATION_URL = "$API_URL/api/teams/invitations";
 
 class TeamInvitationService {
   /// Envoyer une invitation d'équipe à un utilisateur
-  Future<Invitation> sendInvitation(User receiver) async {
+  Future<Invitation> sendInvitation(User receiver, int teamId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
       final response = await http.post(
         Uri.parse('$TEAM_INVITATION_URL/send'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'receiver_id': receiver.id,
+          'team_id': teamId,
         }),
       );
 
@@ -112,51 +118,74 @@ class TeamInvitationService {
     }
   }
 
-  // Récupérer les utilisateurs invités pour une équipe spécifique
+  /// Récupérer uniquement les utilisateurs avec des invitations en attente
   Future<List<Invitation>> getInvitedUsers(int teamId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
       final response = await http.get(
-        Uri.parse('$API_URL/api/team/$teamId/invited-users'),
+        Uri.parse('${API_URL}/api/team/$teamId/invited-users'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
         },
       );
 
-      print('Response status: ${response.statusCode}'); // Debug log
-      print('Response body: ${response.body}'); // Debug log
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['invited_users'] == null) {
-          return [];
-        }
+        List<dynamic> invitedUsers = data['invited_users'] ?? [];
 
-        final List<dynamic> invitedUsers = data['invited_users'];
         return invitedUsers
-            .where((invitation) => invitation != null)
             .map((invitation) {
               try {
-                return Invitation.fromJson(invitation as Map<String, dynamic>);
+                return Invitation.fromJson(invitation);
               } catch (e) {
-                print('Error parsing invitation: $e');
+                debugPrint('Error parsing invitation: $e');
                 return null;
               }
             })
             .where((invitation) => invitation != null)
             .cast<Invitation>()
             .toList();
-      } else if (response.statusCode == 403) {
-        throw Exception(
-            'Vous n\'êtes pas autorisé à voir les utilisateurs invités');
-      } else if (response.statusCode == 404) {
-        return [];
       }
 
       throw Exception(
-          'Erreur lors de la récupération des utilisateurs invités: ${response.statusCode}');
+          'Erreur lors de la récupération des invitations: ${response.statusCode}');
     } catch (e) {
-      debugPrint('Error in getInvitedUsers: $e'); // Debug log
+      debugPrint('Error in getInvitedUsers: $e');
+      rethrow;
+    }
+  }
+
+  /// Récupérer les membres actuels d'une équipe
+
+  /// Récupérer les utilisateurs qui ne sont ni membres de l'équipe ni invités
+  Future<List<User>> getUsersNotInTeamOrInvited(int teamId) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token');
+
+      final response = await http.get(
+        Uri.parse('$API_URL/api/teams/$teamId/available-users'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> users = data['available_users'] ?? [];
+        return users.map((user) => User.fromJson(user)).toList();
+      }
+
+      throw Exception(
+          'Erreur lors de la récupération des utilisateurs disponibles: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Error in getUsersNotInTeamOrInvited: $e');
       rethrow;
     }
   }
