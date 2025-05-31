@@ -209,16 +209,8 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
   }
 
   Widget _buildMembersList(List<UserTeamLink> members) {
-    print('=== _buildMembersList called ===');
-    print('teamId: ${widget.teamId}');
-
     final authState = ref.watch(authProvider);
     final token = authState.accessToken;
-
-    print('token available: ${token != null}');
-    if (token != null) {
-      print('token length: ${token.length}');
-    }
 
     if (token == null) {
       return const Center(
@@ -226,38 +218,64 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
       );
     }
 
-    print('About to call getTeamMembers with teamId: ${widget.teamId}');
-
+    // Utiliser FutureBuilder pour récupérer les membres depuis l'API
     return FutureBuilder<List<UserTeamLink>>(
       future: _teamMembersService.getTeamMembers(widget.teamId, token),
       builder: (context, snapshot) {
-        print('FutureBuilder state: ${snapshot.connectionState}');
-
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print('Still waiting for team members...');
           return const Center(
             child: CircularProgressIndicator(),
           );
         }
 
         if (snapshot.hasError) {
-          print('Error in FutureBuilder: ${snapshot.error}');
+          print('Error in _buildMembersList: ${snapshot.error}');
           return Center(
-            child: Text('Erreur: ${snapshot.error}'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Erreur lors du chargement des membres',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${snapshot.error}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {}); // Force rebuild pour retry
+                  },
+                  child: const Text('Réessayer'),
+                ),
+              ],
+            ),
           );
         }
 
-        final teamMembers = snapshot.data;
-        print('Team members received: ${teamMembers?.length ?? 0}');
+        final teamMembers = snapshot.data ?? [];
 
-        if (teamMembers == null || teamMembers.isEmpty) {
-          print('No team members found');
+        if (teamMembers.isEmpty) {
           return const Center(
-            child: Text('Aucun membre dans l\'équipe'),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 48, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Aucun membre dans l\'équipe',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
           );
         }
 
-        print('Building ListView with ${teamMembers.length} members');
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: teamMembers.length,
@@ -273,13 +291,21 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
                       ? NetworkImage(member.userId.profileImage!)
                       : null,
                   child: member.userId.profileImage == null
-                      ? Text(member.userId.name[0])
+                      ? Text(
+                          member.userId.name.isNotEmpty
+                              ? member.userId.name[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        )
                       : null,
                 ),
                 title: Text(member.userId.name),
                 subtitle: member.isCaptain
-                    ? const Text('Capitaine',
-                        style: TextStyle(color: Colors.blue))
+                    ? const Text(
+                        'Capitaine',
+                        style: TextStyle(
+                            color: Colors.blue, fontWeight: FontWeight.w500),
+                      )
                     : null,
                 trailing: member.isCaptain
                     ? const Icon(Icons.star, color: Colors.amber)
