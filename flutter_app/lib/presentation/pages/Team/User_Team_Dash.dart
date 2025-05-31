@@ -44,7 +44,9 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
   Future<void> _loadTeams() async {
     try {
       // En mode test : toujours utiliser l'utilisateur 1
-      await ref.read(teamsProvider.notifier).loadTeamsForTest();
+        final authState = ref.read(authProvider);
+        final token = authState.accessToken;
+      await ref.read(teamsProvider.notifier).loadTeams(token!);
 
       if (mounted) {
         setState(() {

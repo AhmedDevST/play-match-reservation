@@ -4,17 +4,14 @@ import 'package:flutter_app/models/Invitation.dart';
 import 'package:flutter_app/models/User.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 const TEAM_INVITATION_URL = "$API_URL/api/teams/invitations";
 
 class TeamInvitationService {
   /// Envoyer une invitation d'équipe à un utilisateur
-  Future<Invitation> sendInvitation(User receiver, int teamId) async {
+  Future<Invitation> sendInvitation(
+      User receiver, int teamId, String token) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
       final response = await http.post(
         Uri.parse('$TEAM_INVITATION_URL/send'),
         headers: {
@@ -119,11 +116,8 @@ class TeamInvitationService {
   }
 
   /// Récupérer uniquement les utilisateurs avec des invitations en attente
-  Future<List<Invitation>> getInvitedUsers(int teamId) async {
+  Future<List<Invitation>> getInvitedUsers(int teamId, String token) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
       final response = await http.get(
         Uri.parse('${API_URL}/api/team/$teamId/invited-users'),
         headers: {
@@ -162,11 +156,9 @@ class TeamInvitationService {
   /// Récupérer les membres actuels d'une équipe
 
   /// Récupérer les utilisateurs qui ne sont ni membres de l'équipe ni invités
-  Future<List<User>> getUsersNotInTeamOrInvited(int teamId) async {
+  Future<List<User>> getUsersNotInTeamOrInvited(
+      int teamId, String token) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('auth_token');
-
       final response = await http.get(
         Uri.parse('$API_URL/api/teams/$teamId/available-users'),
         headers: {

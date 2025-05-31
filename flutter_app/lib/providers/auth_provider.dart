@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/models/user.dart';
-import 'package:flutter_app/models/auth_state.dart';
 import 'package:flutter_app/core/services/token_service.dart';
+import 'package:flutter_app/providers/auth_state.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();

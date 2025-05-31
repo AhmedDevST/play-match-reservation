@@ -97,7 +97,7 @@ class SportFacilityCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            sportFacility.address ?? 'No address',
+                            sportFacility.address,
                             style: const TextStyle(fontSize: 13, color: Colors.black54),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -212,27 +212,12 @@ class TeamController extends Controller
     public function myTeams()
     {
         $user = Auth::user();
-        $teams = Team::whereHas('userTeamLinks', function($query) use ($user) {
-            $query->where('user_id', $user->id)
-                  ->where('is_captain', true)
-                  ->where('has_left_team', false);
-        })->with(['captain', 'members', 'sport'])->get();
-
-        return TeamResource::collection($teams);
-    }
-
-    /**
-     * Get teams for test user (user 1)
-     */
-    public function testMyTeams()
-    {
-        $userId = 1; // Toujours utiliser l'utilisateur 1
         
-        // D'abord, récupérer toutes les équipes de l'utilisateur 1
-        $userTeams = UserTeamLink::where('user_id', $userId)
+        // Get all teams where the user is a member (not just captain)
+        $userTeams = UserTeamLink::where('user_id', $user->id)
             ->pluck('team_id');
 
-        // Ensuite, récupérer tous les liens utilisateur-équipe pour ces équipes
+        // Get all UserTeamLink objects for these teams with team and user data
         $userTeamLinks = UserTeamLink::with(['team' => function($query) {
                 $query->with('sport');
             }, 'user'])
@@ -244,6 +229,7 @@ class TeamController extends Controller
             'data' => $userTeamLinks
         ]);
     }
+
 
     // La fonction getTeamUsers a été déplacée vers TeamUserController
 }

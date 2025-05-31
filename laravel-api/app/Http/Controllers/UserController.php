@@ -18,11 +18,11 @@ class UserController extends Controller
             ], 400);
         }
 
-        $users = User::where('name', 'like', "%{$query}%")
+        $users = User::where('username', 'like', "%{$query}%")
             ->orWhere('email', 'like', "%{$query}%")
-            ->select('id', 'name', 'email', 'profile_image')
+            ->select('id', 'username', 'email', 'profile_picture')
             ->limit(10)
-            ->get();
+            ->get();;
 
         return response()->json($users);
     }
@@ -32,8 +32,7 @@ class UserController extends Controller
     $users = User::select('id', 'username', 'email', 'profile_picture')->get();
 
     return response()->json([
-        'success' => true,
-        'data' => $users
+        'users' => $users
     ], 200);
 }
 }

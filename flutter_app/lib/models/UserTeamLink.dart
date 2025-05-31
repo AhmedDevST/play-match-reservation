@@ -27,8 +27,12 @@ class UserTeamLink {
   factory UserTeamLink.fromJson(Map<String, dynamic> json) {
     return UserTeamLink(
       id: json['id'],
-      userId: User.fromJson(json['user']),
-      team: Team.fromJson(json['team']),
+      userId: json['user'] != null && json['user'] is Map<String, dynamic>
+          ? User.fromJson(json['user'])
+          : throw Exception('User data is missing or invalid'),
+      team: json['team'] != null && json['team'] is Map<String, dynamic>
+          ? Team.fromJson(json['team'])
+          : throw Exception('Team data is missing or invalid'),
       startDate: DateTime.parse(json['start_date']),
       endDate:
           json['end_date'] != null ? DateTime.parse(json['end_date']) : null,

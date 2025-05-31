@@ -16,10 +16,11 @@ class UserTeamController extends Controller
      */
     public function createTeam(Request $request)
     {
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:teams',
             'sport_id' => 'required|exists:sports,id',
-            'image' => 'nullable|string',
+            'image' => 'nullable|string|regex:/^data:image\/[^;]+;base64,/',
         ]);
 
         // Vérifier si l'utilisateur est déjà capitaine d'une équipe du même sport
@@ -45,11 +46,18 @@ class UserTeamController extends Controller
             ], 422);
         }
 
+        // Sauvegarder l'image si elle existe
+        $imageUrl = null;
+        if ($request->image) {
+            $imageUrl = $this->saveImage($request->image);
+        }
+
         // Créer l'équipe avec les champs fillable
         $team = Team::create([
             'name' => $request->name,
+            'sport_id' => $request->sport_id,
             'total_score' => 0,
-            'image' => $request->image,
+            'image' => $imageUrl,
             'average_rating' => 0.0,
         ]);
 
@@ -70,103 +78,7 @@ class UserTeamController extends Controller
         ], 201);
     }
 
-    /**
-     * Créer une nouvelle équipe pour l'utilisateur 1 (mode test)
-     */
-    public function createTeamTest(Request $request)
-    {
-        try {
-            \Log::info('Creating test team with request:', ['data' => $request->all()]);
-            
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255|unique:teams',
-                'sport_id' => 'required|exists:sports,id',
-                'image' => 'nullable|string|regex:/^data:image\/[^;]+;base64,/',
-            ]);
-
-            // Vérifier si l'utilisateur est déjà capitaine d'une équipe du même sport
-            $existingTeams = UserTeamLink::where('user_id', 1)
-                ->where('is_captain', true)
-                ->whereHas('team', function ($query) use ($request) {
-                    $query->where('sport_id', $request->sport_id);
-                })
-                ->get();
-
-            foreach ($existingTeams as $link) {
-                // Si l'utilisateur a un lien actif (n'a pas quitté l'équipe)
-                if (!$link->has_left_team) {
-                    return response()->json([
-                        'message' => 'Vous êtes déjà capitaine d\'une équipe active de ce sport',
-                        'team' => $link->team
-                    ], 400);
-                }
-            }
-
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Sauvegarder l'image si elle existe
-        $imageUrl = null;
-        if ($request->image) {
-            $imageUrl = $this->saveImage($request->image);
-        }
-
-        // Créer l'équipe avec les champs fillable
-        $team = Team::create([
-            'name' => $request->name,
-            'sport_id' => $request->sport_id,
-            'total_score' => 0,
-            'image' => $imageUrl,
-            'average_rating' => 0.0,
-        ]);
-
-        try {
-            // Créer le lien avec l'utilisateur 1
-            UserTeamLink::create([
-                'user_id' => 1, // Toujours utiliser l'utilisateur 1 pour les tests
-                'team_id' => $team->id,
-                'start_date' => now(),
-                'end_date' => null,
-                'has_left_team' => false,
-                'leave_reason' => null,
-                'is_captain' => true,
-            ]);
-
-            // Load sport relationship and UserTeamLink
-            $team->load(['sport', 'userTeamLinks']);
-
-            \Log::info('Team created successfully:', ['team' => $team->toArray()]);
-        } catch (\Exception $e) {
-            \Log::error('Error creating team link:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            throw $e;
-        }
-
-        // Charger les relations nécessaires
-        $team->load(['userTeamLinks.user', 'sport']);
-
-        return response()->json([
-            'message' => 'Team created successfully',
-            'team' => $team
-        ], 201);
-        }
-        catch (\Exception $e) {
-            \Log::error('Error in createTeamTest:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Erreur lors de la création de l\'équipe de test: ' . $e->getMessage()
-            ], 500);
-        }
-    }
+    
 
     /**
      * Enregistrer une image à partir d'une chaîne Base64
@@ -197,5 +109,26 @@ class UserTeamController extends Controller
         }
     }
 
+    /**
+     * Récupérer les membres d'une équipe
+     */
+    public function getTeamMembers($teamId)
+    {
+        $team = Team::findOrFail($teamId);
+        
+        // Récupérer tous les membres de l'équipe qui n'ont pas quitté
+        $teamMembers = UserTeamLink::where('team_id', $teamId)
+            ->where('has_left_team', false)
+            ->with([
+                'user:id,username,email,profile_picture',
+                'team:id,name,image,total_score,average_rating,sport_id',
+                'team.sport:id,name,max_players'
+            ])
+            ->get();
+
+        return response()->json([
+            'team_members' => $teamMembers
+        ]);
+    }
 }
 

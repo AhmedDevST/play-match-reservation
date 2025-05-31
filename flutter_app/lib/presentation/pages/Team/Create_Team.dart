@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/Sport.dart';
-import 'package:flutter_app/models/Team.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:mime/mime.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -109,13 +109,13 @@ class _CreateTeamState extends ConsumerState<CreateTeam> {
           image: _base64Image,
         );
 
-        final team = widget.isTestMode
-            ? await _teamService.createTeamTest(request)
-            : await _teamService.createTeam(request);
+        final authState = ref.read(authProvider);
+        final token = authState.accessToken;
+        final team = await _teamService.createTeam(request, token!);
 
         if (mounted) {
           // Notifier le provider qu'une nouvelle équipe a été créée
-          await ref.read(teamsProvider.notifier).onTeamCreated(team);
+          await ref.read(teamsProvider.notifier).onTeamCreated(team,token);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Équipe créée avec succès')),

@@ -36,11 +36,14 @@ Route::get('/test-route', function () {
 // Team routes
 Route::get('/teams', [TeamController::class, 'index']);
 
-// Test mode team operations
-Route::post('/teams/test-create-team', [UserTeamController::class, 'createTeamTest']);
+//route create team
+Route::post('/teams/createTeam', [UserTeamController::class, 'createTeam'])->middleware('auth:sanctum');
 
 
 Route::get('/teams/my-teams', [TeamController::class, 'myTeams'])->middleware('auth:sanctum');
+
+// Route pour récupérer les membres d'une équipe
+Route::get('/teams/{teamId}/members', [UserTeamController::class, 'getTeamMembers'])->middleware('auth:sanctum');
 
 
 // Route de test pour l'utilisateur 1
@@ -59,18 +62,17 @@ Route::get('/users/search', [UserController::class, 'search']);
 // Get all users
 Route::get('/users', [UserController::class, 'index']);
 
-// Routes pour les invitations d'équipe
-Route::prefix('teams/invitations')->group(function () {
-    Route::post('/send', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'send']);
-    Route::get('/pending', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getPendingInvitations']);
-    Route::post('/{invitation}/respond', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'respond']);
-    //get invited users for a specific team
-
-});
+Route::middleware('auth:sanctum')->group(function () {
+    // Routes pour les invitations d'équipe
+    Route::prefix('teams/invitations')->group(function () {
+        Route::post('/send', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'send']);
+        Route::get('/pending', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getPendingInvitations']);
+        Route::post('/{invitation}/respond', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'respond']);
+    });
+    
     // Get invited users for a specific team
     Route::get('/team/{team}/invited-users', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getInvitedUsers']);
 
-Route::middleware('auth:sanctum')->group(function () {
     // Team Invitations
     Route::get('/teams/{team}/available-users', [TeamInvitationController::class, 'getUsersNotInTeamOrInvited']);
 });

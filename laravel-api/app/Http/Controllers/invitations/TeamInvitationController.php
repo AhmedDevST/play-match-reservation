@@ -25,7 +25,7 @@ class TeamInvitationController extends Controller
 
         // Vérifier si l'utilisateur est capitaine d'au moins une équipe
         // $isCaptain = Auth::user()->userTeamLinks()
-        $isCaptain = User::find(1)->userTeamLinks()// Auth::user() pour plus de clarté
+        $isCaptain = Auth::user()->userTeamLinks()
             ->where('is_captain', true)
             ->where('has_left_team', false)
             ->exists();
@@ -51,7 +51,7 @@ class TeamInvitationController extends Controller
 
         // Récupérer l'équipe courante du capitaine avec son sport
         $team = Team::with('sport')->whereHas('userTeamLinks', function ($query) {
-            $query->where('user_id', 1) // Auth::id() pour plus tard
+            $query->where('user_id', Auth::id()) // Utiliser Auth::id() au lieu de 1
                   ->where('is_captain', true)
                   ->where('has_left_team', false);
         })->first();
@@ -85,7 +85,7 @@ class TeamInvitationController extends Controller
 
         // Créer l'invitation avec la relation morphTo
         $invitation = Invitation::create([
-            'sender_id' => 1, // Auth::id() pour plus tard
+            'sender_id' => Auth::id(), // Utiliser Auth::id() au lieu de 1
             'receiver_id' => $request->receiver_id,
             'type' => TypeInvitation::TEAM,
             'status' => InvitationStatus::PENDING,
@@ -104,7 +104,7 @@ class TeamInvitationController extends Controller
      */
     public function getPendingInvitations()
     {
-        $invitations = Invitation::where('receiver_id', 2)// Auth::id() pour l'utilisateur connecté
+        $invitations = Invitation::where('receiver_id', Auth::id())// Auth::id() pour l'utilisateur connecté
             ->where('type', TypeInvitation::TEAM)
             ->where('status', InvitationStatus::PENDING)
             ->with(['sender', 'receiver'])
@@ -126,7 +126,7 @@ class TeamInvitationController extends Controller
         ]);
 
         // Vérifier si l'utilisateur est bien le destinataire
-        if ($invitation->receiver_id !== 2) {
+        if ($invitation->receiver_id !== Auth::id()) {
             return response()->json([
                 'message' => 'Non autorisé à répondre à cette invitation'
             ], 403);
@@ -170,12 +170,12 @@ class TeamInvitationController extends Controller
             }
 
             $team->userTeamLinks()->create([
-                'user_id' => 2,// Auth::id() pour l'utilisateur connecté
-                    'team_id' => $team->id,
-                    'start_date' => now(),
-                    'is_captain' => false,
-                    'has_left_team' => false
-                ]);
+                'user_id' => Auth::id(), // Utiliser Auth::id() pour l'utilisateur connecté
+                'team_id' => $team->id,
+                'start_date' => now(),
+                'is_captain' => false,
+                'has_left_team' => false
+            ]);
         }
 
         return response()->json([
@@ -195,6 +195,18 @@ class TeamInvitationController extends Controller
             return response()->json([
                 'message' => 'Équipe non trouvée'
             ], 404);
+        }
+
+        // Vérifier si l'utilisateur connecté est membre de l'équipe
+        $userTeamLink = $team->userTeamLinks()
+            ->where('user_id', Auth::id())
+            ->where('has_left_team', false)
+            ->first();
+
+        if (!$userTeamLink) {
+            return response()->json([
+                'message' => 'Vous devez être membre de cette équipe pour voir les invitations'
+            ], 403);
         }
 
         // Récupérer le capitaine de l'équipe
@@ -231,6 +243,19 @@ class TeamInvitationController extends Controller
             return response()->json([
                 'message' => 'Équipe non trouvée'
             ], 404);
+        }
+
+        // Vérifier si l'utilisateur connecté est capitaine de l'équipe
+        $userTeamLink = $team->userTeamLinks()
+            ->where('user_id', Auth::id())
+            ->where('is_captain', true)
+            ->where('has_left_team', false)
+            ->first();
+
+        if (!$userTeamLink) {
+            return response()->json([
+                'message' => 'Vous devez être capitaine de cette équipe pour voir les utilisateurs disponibles'
+            ], 403);
         }
 
         // Récupérer les IDs des membres actuels de l'équipe
