@@ -4,7 +4,7 @@ import 'package:flutter_app/models/Team.dart';
 import 'package:flutter_app/models/Sport.dart';
 import 'package:http/http.dart' as http;
 
-const USER_TEAM_URL = "$API_URL/api/user-team";
+const USER_TEAM_URL = "$API_URL/api/teams/createTeam";
 
 class CreateTeamRequest {
   final String name;
@@ -27,10 +27,12 @@ class CreateTeamRequest {
 }
 
 class UserTeamService {
-  Future<Team> createTeam(CreateTeamRequest request) async {
+  Future<Team> createTeam(CreateTeamRequest request, String token) async {
+
     final response = await http.post(
       Uri.parse(USER_TEAM_URL),
       headers: {
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
@@ -38,7 +40,8 @@ class UserTeamService {
     );
 
     if (response.statusCode == 201) {
-      print('Server response: ${response.body}'); // Debug log
+      print('Server response: ${response.body}');
+      // Debug log
       final data = jsonDecode(response.body);
 
       if (data['team'] == null) {
@@ -50,44 +53,7 @@ class UserTeamService {
       if (team['sport'] == null) {
         throw Exception('Sport data is missing in server response');
       }
-
-      return Team.fromJson(team);
-    } else if (response.statusCode == 422) {
-      final data = jsonDecode(response.body);
-      throw Exception(data['errors'].toString());
-    }
-
-    print('Error response: ${response.body}'); // Debug log
-    throw Exception('Failed to create team: ${response.statusCode}');
-  }
-
-  Future<Team> createTeamTest(CreateTeamRequest request) async {
-    final response = await http.post(
-      Uri.parse('$API_URL/api/teams/test-create-team'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: jsonEncode({
-        ...request.toJson(),
-        'user_id': 1, // Toujours utiliser l'utilisateur 1 pour les tests
-      }),
-    );
-
-    if (response.statusCode == 201) {
-      print('Server response: ${response.body}'); // Debug log
-      final data = jsonDecode(response.body);
-
-      if (data['team'] == null) {
-        throw Exception('Team data is null in server response');
-      }
-
-      final team = data['team'];
-
-      if (team['sport'] == null) {
-        throw Exception('Sport data is missing in server response');
-      }
-
+      // Debug log
       return Team.fromJson(team);
     } else if (response.statusCode == 422) {
       final data = jsonDecode(response.body);

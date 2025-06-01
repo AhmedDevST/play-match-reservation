@@ -30,6 +30,7 @@ class AuthController extends Controller
         $token = $user->createToken('mobile_token')->plainTextToken;
 
         try {
+            
             return response()->json([
             'message' => 'Connexion réussie',
             'token' => $token,

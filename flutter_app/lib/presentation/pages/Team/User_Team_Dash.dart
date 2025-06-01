@@ -7,6 +7,7 @@ import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
 import 'package:flutter_app/providers/team_provider.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/core/config/routes.dart';
+import 'package:flutter_app/presentation/pages/home/home_page.dart';
 
 class UserTeamDash extends ConsumerStatefulWidget {
   const UserTeamDash({super.key});
@@ -43,7 +44,9 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
   Future<void> _loadTeams() async {
     try {
       // En mode test : toujours utiliser l'utilisateur 1
-      await ref.read(teamsProvider.notifier).loadTeamsForTest();
+        final authState = ref.read(authProvider);
+        final token = authState.accessToken;
+      await ref.read(teamsProvider.notifier).loadTeams(token!);
 
       if (mounted) {
         setState(() {
@@ -97,7 +100,10 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.grey.shade800),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          ),
         ),
         title: Text(
           'Mes Équipes',
@@ -184,15 +190,27 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
     }
 
     // Séparer les équipes en deux listes et les trier par date de début
-    final currentTeams = userTeamLinks
-        .where((link) => !link.hasLeftTeam)
-        .toList()
-      ..sort((a, b) => b.startDate.compareTo(a.startDate));
+    // Créer un Set pour garder une trace des IDs d'équipe déjà vus
+    final seenTeamIds = <int>{};
 
-    final historicalTeams = userTeamLinks
-        .where((link) => link.hasLeftTeam)
-        .toList()
-      ..sort((a, b) => b.startDate.compareTo(a.startDate));
+    final currentTeams =
+        userTeamLinks.where((link) => !link.hasLeftTeam).where((link) {
+      // Ne garder que la première occurrence de chaque équipe
+      if (seenTeamIds.contains(link.team.id)) return false;
+      seenTeamIds.add(link.team.id);
+      return true;
+    }).toList()
+          ..sort((a, b) => b.startDate.compareTo(a.startDate));
+
+    seenTeamIds.clear(); // Réinitialiser pour l'historique
+
+    final historicalTeams =
+        userTeamLinks.where((link) => link.hasLeftTeam).where((link) {
+      if (seenTeamIds.contains(link.team.id)) return false;
+      seenTeamIds.add(link.team.id);
+      return true;
+    }).toList()
+          ..sort((a, b) => b.startDate.compareTo(a.startDate));
 
     return RefreshIndicator(
       onRefresh: _loadTeams,

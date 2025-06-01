@@ -54,6 +54,9 @@ class UserService {
       throw Exception('Failed to fetch users: $e');
     }
   }
+
+
+  
 }
 
 Future<List<Reservation>> getReservationOfUser(int user_id) async {

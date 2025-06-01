@@ -13,9 +13,11 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'], // Accepte maintenant les deux types
-      name: json['username'] ?? json['name'], // Accepte les deux clés
-      email: json['email'],
-      profileImage: json['profile_picture']
+      name: json['username'] ??
+          json['name'] ??
+          'Utilisateur sans nom', // Gestion des valeurs null
+      email: json['email'] ?? 'email@exemple.com', // Gestion des valeurs null
+      profileImage: json['profile_picture'],
     );
   }
 

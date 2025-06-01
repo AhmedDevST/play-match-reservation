@@ -12,6 +12,8 @@ class Invitation {
   final InvitationStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String invitableType;
+  final int invitableId;
 
   Invitation({
     required this.id,
@@ -21,6 +23,8 @@ class Invitation {
     required this.status,
     required this.createdAt,
     required this.updatedAt,
+    required this.invitableType,
+    required this.invitableId,
   });
 
   factory Invitation.fromJson(Map<String, dynamic> json) {
@@ -43,6 +47,8 @@ class Invitation {
       ),
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+      invitableType: json['invitable_type'],
+      invitableId: json['invitable_id'],
     );
   }
 
@@ -55,6 +61,8 @@ class Invitation {
       'status': status.toString().split('.').last,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'invitable_type': invitableType,
+      'invitable_id': invitableId,
     };
   }
 }

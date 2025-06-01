@@ -1,18 +1,23 @@
 import 'dart:convert';
+import 'package:flutter_app/presentation/pages/Login_Registration/SignUp.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_app/models/user.dart';
 
-class Login extends StatefulWidget {
+class Login extends ConsumerStatefulWidget {
   const Login({super.key});
 
   @override
-  _LoginState createState() => _LoginState();
+  ConsumerState<Login> createState() => _LoginState();
 }
 
-class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
+class _LoginState extends ConsumerState<Login>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -37,7 +42,8 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
       ),
     );
 
-    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOut,
@@ -53,39 +59,57 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
   Future<void> _SignIn() async {
     // Utilisez 10.0.2.2 pour l'émulateur Android, qui pointe vers localhost de votre machine
     final url = Uri.parse('http://localhost:8000/api/login');
-   
+
     try {
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json', // Ajout du header Accept
-        },    
+        },
         body: jsonEncode({
           'email': _emailController.text,
           'password': _passwordController.text
         }),
       );
-      
+
       if (response.statusCode == 200) {
-         
-        // Succès
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage()));
-        // retour à login
+        // Décoder la réponse JSON
+        final data = jsonDecode(response.body);
+
+        // Créer l'objet User à partir des données reçues
+        final user = User.fromJson(data['user']);
+        print(data['token']);
+
+        // Utiliser le AuthProvider pour gérer l'authentification
+        await ref.read(authProvider.notifier).login(
+              user: user,
+              accessToken: data['token'],
+              refreshToken: data['token'],
+            );
+        print('Im here');
+        // Succès - Navigation vers la page d'accueil
+        if (mounted) {
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (context) => HomePage()));
+        }
       } else {
         // Erreur
         final error = jsonDecode(response.body);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : ${error['message']}')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur : ${error['message']}')),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur de connexion: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur de connexion: $e')),
+        );
+      }
       print(e);
     }
-
   }
 
   @override
@@ -108,7 +132,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
               fit: BoxFit.cover,
             ),
           ),
-          
+
           // Effet de flou
           Positioned.fill(
             child: BackdropFilter(
@@ -118,7 +142,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
-          
+
           // Contenu principal
           SafeArea(
             child: Center(
@@ -146,13 +170,13 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                         children: [
                           // Logo ou icône
                           Container(
-                           
-                            child: 
-                            Image.asset('assets/images/logo.png',height: 120,),
-                            
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              height: 120,
+                            ),
                           ),
                           const SizedBox(height: 24),
-                          
+
                           // Titre
                           const Text(
                             'Connexion',
@@ -163,7 +187,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                             ),
                           ),
                           const SizedBox(height: 32),
-                          
+
                           // Formulaire
                           Form(
                             key: _formKey,
@@ -188,7 +212,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                   delayFactor: 1,
                                 ),
                                 const SizedBox(height: 20),
-                                
+
                                 // Champ mot de passe
                                 _buildAnimatedTextField(
                                   controller: _passwordController,
@@ -204,7 +228,8 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                     ),
                                     onPressed: () {
                                       setState(() {
-                                        _isPasswordVisible = !_isPasswordVisible;
+                                        _isPasswordVisible =
+                                            !_isPasswordVisible;
                                       });
                                     },
                                   ),
@@ -220,10 +245,11 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                   delayFactor: 2,
                                 ),
                                 const SizedBox(height: 12),
-                                
+
                                 // Options de connexion
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     // Option Se souvenir de moi
                                     _buildDelayedAnimation(
@@ -240,7 +266,8 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                                 });
                                               },
                                               shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(4),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                               ),
                                             ),
                                           ),
@@ -256,7 +283,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                       ),
                                       delayFactor: 3,
                                     ),
-                                    
+
                                     // Mot de passe oublié
                                     _buildDelayedAnimation(
                                       child: TextButton(
@@ -266,7 +293,8 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: const Size(10, 10),
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
                                         ),
                                         child: const Text(
                                           'Mot de passe oublié ?',
@@ -281,22 +309,24 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                   ],
                                 ),
                                 const SizedBox(height: 32),
-                                
+
                                 // Bouton de connexion
                                 _buildDelayedAnimation(
                                   child: ElevatedButton(
                                     onPressed: () {
-                                     _SignIn();
+                                      _SignIn();
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF2EE59D),
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(30),
                                       ),
                                       elevation: 3,
-                                      shadowColor: const Color(0xFF2EE59D).withOpacity(0.5),
+                                      shadowColor: const Color(0xFF2EE59D)
+                                          .withOpacity(0.5),
                                     ),
                                     child: const Text(
                                       'Se connecter',
@@ -309,7 +339,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                   delayFactor: 4,
                                 ),
                                 const SizedBox(height: 24),
-                                
+
                                 // Option d'inscription
                                 _buildDelayedAnimation(
                                   child: Row(
@@ -323,15 +353,14 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
                                       ),
                                       TextButton(
                                         onPressed: () {
-                                          print("hello");
                                           // Navigation vers la page d'inscription
-                                          if (_formKey.currentState!.validate()) {
-                                        // Navigation vers la page d'accueil après validation du formulaire
-                                        Navigator.pushReplacement(
-                                          context,
-                                          MaterialPageRoute(builder: (context) => const HomePage()),
-                                        );
-                                      }
+
+                                          // Navigation vers la page d'accueil après validation du formulaire
+                                          Navigator.pushReplacement(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const SignUp()));
                                         },
                                         child: const Text(
                                           "S'inscrire",
@@ -356,7 +385,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
               ),
             ),
           ),
-          
+
           // Bouton de retour
           SafeArea(
             child: Padding(
@@ -376,7 +405,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
       ),
     );
   }
- 
+
   Widget _buildAnimatedTextField({
     required TextEditingController controller,
     required String hintText,
@@ -398,7 +427,8 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
           suffixIcon: suffixIcon,
           filled: true,
           fillColor: Colors.grey.shade100,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -409,7 +439,8 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
+            borderSide:
+                BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -425,14 +456,14 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
       delayFactor: delayFactor,
     );
   }
-  
+
   Widget _buildDelayedAnimation({
     required Widget child,
     required int delayFactor,
   }) {
     // Créer une animation décalée basée sur le facteur de délai
     final delay = Duration(milliseconds: 150 * delayFactor);
-    
+
     return FutureBuilder(
       future: Future.delayed(delay),
       builder: (context, snapshot) {
@@ -443,7 +474,7 @@ class _LoginState extends State<Login> with SingleTickerProviderStateMixin {
             child: child,
           );
         }
-        
+
         // Sinon, afficher l'élément avec une animation
         return AnimatedOpacity(
           opacity: 1.0,

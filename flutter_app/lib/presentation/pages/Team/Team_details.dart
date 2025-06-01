@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/team_provider.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/models/UserTeamLink.dart';
 import 'package:flutter_app/models/Invitation.dart';
 import 'package:flutter_app/core/services/invitation/TeamInvitationService.dart';
+import 'package:flutter_app/core/services/team/TeamMembersService.dart';
 
 class TeamDetails extends ConsumerStatefulWidget {
   final int teamId;
@@ -15,6 +17,23 @@ class TeamDetails extends ConsumerStatefulWidget {
 }
 
 class _TeamDetailsState extends ConsumerState<TeamDetails> {
+  final TeamInvitationService _invitationService = TeamInvitationService();
+  final TeamMembersService _teamMembersService = TeamMembersService();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Forcer le rechargement des données de l'équipe
+    Future.microtask(() {
+      final authState = ref.read(authProvider);
+      final token = authState.accessToken;
+      if (token != null) {
+        ref.read(teamsProvider.notifier).loadTeams(token);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final teams = ref.watch(teamsProvider);
@@ -190,49 +209,129 @@ class _TeamDetailsState extends ConsumerState<TeamDetails> {
   }
 
   Widget _buildMembersList(List<UserTeamLink> members) {
-    if (members.isEmpty) {
+    final authState = ref.watch(authProvider);
+    final token = authState.accessToken;
+
+    if (token == null) {
       return const Center(
-        child: Text('Aucun membre dans l\'équipe'),
+        child: Text('Token d\'authentification requis'),
       );
     }
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: members.length,
-      itemBuilder: (context, index) {
-        final member = members[index];
-        return Card(
-          elevation: 2,
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundImage: member.userId.profileImage != null
-                  ? NetworkImage(member.userId.profileImage!)
-                  : null,
-              child: member.userId.profileImage == null
-                  ? Text(member.userId.name[0])
-                  : null,
+
+    // Utiliser FutureBuilder pour récupérer les membres depuis l'API
+    return FutureBuilder<List<UserTeamLink>>(
+      future: _teamMembersService.getTeamMembers(widget.teamId, token),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        if (snapshot.hasError) {
+          print('Error in _buildMembersList: ${snapshot.error}');
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Erreur lors du chargement des membres',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${snapshot.error}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {}); // Force rebuild pour retry
+                  },
+                  child: const Text('Réessayer'),
+                ),
+              ],
             ),
-            title: Text(member.userId.name),
-            subtitle: member.isCaptain
-                ? const Text('Capitaine', style: TextStyle(color: Colors.blue))
-                : null,
-            trailing: member.isCaptain
-                ? const Icon(Icons.star, color: Colors.amber)
-                : null,
-          ),
+          );
+        }
+
+        final teamMembers = snapshot.data ?? [];
+
+        if (teamMembers.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.people_outline, size: 48, color: Colors.grey),
+                SizedBox(height: 16),
+                Text(
+                  'Aucun membre dans l\'équipe',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: teamMembers.length,
+          itemBuilder: (context, index) {
+            final member = teamMembers[index];
+
+            return Card(
+              elevation: 2,
+              margin: const EdgeInsets.only(bottom: 8),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: member.userId.profileImage != null
+                      ? NetworkImage(member.userId.profileImage!)
+                      : null,
+                  child: member.userId.profileImage == null
+                      ? Text(
+                          member.userId.name.isNotEmpty
+                              ? member.userId.name[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        )
+                      : null,
+                ),
+                title: Text(member.userId.name),
+                subtitle: member.isCaptain
+                    ? const Text(
+                        'Capitaine',
+                        style: TextStyle(
+                            color: Colors.blue, fontWeight: FontWeight.w500),
+                      )
+                    : null,
+                trailing: member.isCaptain
+                    ? const Icon(Icons.star, color: Colors.amber)
+                    : null,
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  final TeamInvitationService _invitationService = TeamInvitationService();
-
   Widget _buildPendingList(List<UserTeamLink> pending) {
     final teams = ref.watch(teamsProvider);
     final teamLink = teams.firstWhere((team) => team.team.id == widget.teamId);
+    final authState = ref.watch(authProvider);
+    final token = authState.accessToken;
+
+    if (token == null) {
+      return const Center(
+        child: Text('Token d\'authentification requis'),
+      );
+    }
 
     return FutureBuilder<List<Invitation>>(
-      future: _invitationService.getInvitedUsers(widget.teamId),
+      future: _invitationService.getInvitedUsers(widget.teamId, token),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
