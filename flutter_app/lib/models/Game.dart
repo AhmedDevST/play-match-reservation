@@ -43,23 +43,20 @@ class Game {
   }
 
   factory Game.fromJson(Map<String, dynamic> json) {
-    List teamsJson = json['teams'] ?? [];
+  List teamsJson = json['teams'] ?? [];
 
-    if (teamsJson.length < 2) {
-      throw Exception("Two teams are required to create a match");
-    }
+  final team1Json = teamsJson[0] ;
+  final team2Json = teamsJson.length > 1 ? teamsJson[1] : null;
 
-    final team1Json = teamsJson[0];
-    final team2Json = teamsJson[1];
+  return Game(
+    id: json['id'],
+    status: json['status'] ?? 'pending',
+    type: json['type'] == 'private' ? GameType.private : GameType.public,
+    team1: Team.fromJson(team1Json['team']),
+    opponentTeam: team2Json != null ? Team.fromJson(team2Json['team']) : null,
+    team1Score: team1Json?['score'] ?? 0,
+    opponentScore: team2Json?['score'] ?? 0,
+  );
+} 
 
-    return Game(
-      id: json['id'],
-      status: json['status'] ?? 'pending',
-      type: json['type'] == 'private' ? GameType.private : GameType.public,
-      team1: Team.fromJson(team1Json['team']),
-      opponentTeam: Team.fromJson(team2Json['team']),
-      team1Score: team1Json['score'] ?? 0,
-      opponentScore: team2Json['score'] ?? 0,
-    );
-  }
 }

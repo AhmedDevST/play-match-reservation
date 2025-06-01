@@ -37,6 +37,6 @@ class Game  extends Model
     }
     public function invitations()
     {
-        return $this->morphMany(Invitation::class, 'invitabl');
+        return $this->morphMany(Invitation::class, 'invitable');
     }
 }

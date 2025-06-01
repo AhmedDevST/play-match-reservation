@@ -38,14 +38,14 @@ class CancelExpiredInvitations extends Command
                 InvitationStatus::PENDING->value,
                 InvitationStatus::REJECTED->value
             ])
-            ->where('created_at', '<=', now()->subMinutes(5))
+            ->where('created_at', '<=', now()->subMinutes(3))
             ->get();
 
 
         foreach ($expiredInvitations as $invitation) {
             $invitation->status = InvitationStatus::CANCELED->value;
             $invitation->save();
-            $match = $invitation->invitabl;
+            $match = $invitation->invitable;
             if ($match instanceof Game  && $match->status === MatchStatus::PENDING) {
                 $match->status = MatchStatus::CANCELLED;
                 $match->save();
@@ -70,18 +70,17 @@ class CancelExpiredInvitations extends Command
         // 2. Confirm accepted MATCH invitations
         $acceptedInvitations = Invitation::where('type', TypeInvitation::MATCH->value)
             ->where('status', InvitationStatus::ACCEPTED->value)
-             ->where('created_at', '>', now()->subMinutes(5))
             ->get();
 
         foreach ($acceptedInvitations as $invitation) {
-            $match = $invitation->invitabl;
+            $match = $invitation->invitable;
             if ($match instanceof Game && $match->status === MatchStatus::PENDING) {
                 $match->status = MatchStatus::CONFIRMED;
                 $match->save();
 
                 $reservation = $match->reservation;
                 if ($reservation && $reservation->status === ReservationStatus::PENDING) {
-                    $reservation->status = ReservationStatus::CONFIRMED;
+                    $reservation->status = ReservationStatus::COMPLETED;
                     $reservation->save();
                 }
             }

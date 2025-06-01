@@ -42,6 +42,9 @@ Future<ReservationResponse> fetchInitReservation() async {
 
 Future<ApiResponse> saveReservation(Reservation reservation) async {
   try {
+    print(reservation.game != null
+        ? "Saving reservation with game: ${reservation.game?.matchTypeAsString}"
+        : "Saving reservation without game");
     final url = Uri.parse("$RESERVATION_URL");
     final response = await http.post(
       url,

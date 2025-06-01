@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/core/services/response/ApiResponse.dart';
 import 'package:flutter_app/models/Game.dart';
 import 'package:flutter_app/models/Reservation.dart';
+import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';
 import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
 import 'package:flutter_app/presentation/widgets/dialog/StatusDialog.dart';
 import 'package:intl/intl.dart';
@@ -71,7 +72,7 @@ class BookingSummaryScreen extends StatelessWidget {
       if (success) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => SelectFacilitySport()),
+          MaterialPageRoute(builder: (context) => MyBooking()),
           (route) => false,
         );
       }

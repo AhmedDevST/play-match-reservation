@@ -11,6 +11,7 @@ use App\Http\Controllers\Invitations\TeamInvitationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
@@ -87,7 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getPendingInvitations']);
         Route::post('/{invitation}/respond', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'respond']);
     });
-    
+
     // Get invited users for a specific team
     Route::get('/team/{team}/invited-users', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getInvitedUsers']);
 
@@ -96,3 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 
+//invitations
+ Route::patch('/invitations/{id}/status', [InvitationController::class, 'updateStatus']);
+Route::post('/invitations', [InvitationController::class, 'store']);

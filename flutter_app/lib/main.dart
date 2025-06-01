@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/presentation/pages/match/match_details.dart';
 import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,7 +29,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: Routes.myBooking,
+      initialRoute: Routes.landing,
       onGenerateRoute: (RouteSettings settings) {
         return MaterialPageRoute(
           settings: settings,

@@ -63,7 +63,14 @@ class ReservationController extends Controller
 
     public function store(Request $request)
     {
-        if ($request->has('is_match') == false) {
+        if (!$request->has('is_match')) {
+            return response()->json([
+                'message' => 'is_match parameter is required.',
+                'success' => false,
+            ], 422);
+        }
+         $is_match = $request->input('is_match');
+        if ($is_match == false ) {
             $validator = Validator::make($request->all(), [
                 'time_slot_id' => [
                     'required',
@@ -240,19 +247,18 @@ class ReservationController extends Controller
                         'type' => TypeInvitation::MATCH->value,
                         'status' => InvitationStatus::PENDING->value,
                     ]);
-                    $invitation->invitabl()->associate($match);
+                    $invitation->invitable()->associate($match);
                     $invitation->save();
                 }
-
+                DB::commit();
                 return response()->json([
                     'message' => 'Reservation created successfully.',
                     'success' => true,
                 ], 201);
             } catch (\Exception $e) {
                 DB::rollBack();
-
                 return response()->json([
-                    'message' => 'Reservation failed.',
+                    'message' => 'Reservation failed'.$e,
                     'success' => false,
                 ], 500);
             }

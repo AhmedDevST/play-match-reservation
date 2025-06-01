@@ -158,8 +158,8 @@ class _CreateMatchState extends State<CreateMatch>
                         _buildSectionTitle('Select Your Team'),
                         _buildTeamDropdown(),
                         const SizedBox(height: 24),
-                        _buildSectionTitle('Match Type'),
-                        _buildMatchTypeToggle(),
+                        _buildSectionTitle('Select a Team'),
+                       // _buildMatchTypeToggle(),
                         const SizedBox(height: 24),
                         if (isPrivateMatch) ...[
                           _buildPrivateMatchConfig(),

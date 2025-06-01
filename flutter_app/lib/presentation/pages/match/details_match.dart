@@ -439,7 +439,7 @@ class _MatchDetailsState extends State<MatchDetails>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'FINAL SCORE',
+                        team1.sport.name,
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
