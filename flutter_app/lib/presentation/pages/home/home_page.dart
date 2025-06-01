@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_app/presentation/widgets/bottom_nav_bar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -36,6 +38,7 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   void initState() {
     super.initState();
+    
 
     // Configuration de l'animation
     _animationController = AnimationController(
@@ -152,8 +155,14 @@ class _HomePageState extends ConsumerState<HomePage>
                     Hero(
                       tag: 'userAvatar',
                       child: GestureDetector(
-                        onTap: () {
+                        onTap: () async {
+                          // Naviguer vers la page de profil
+                         
+                         final prefs = await SharedPreferences.getInstance();
+                         final token= await  prefs.getString('authToken');
+                        if(token != null) {
                           Navigator.of(context).pushNamed('/profile');
+                        } 
                         },
                         child: Container(
                           height: 40,
@@ -254,8 +263,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ),
               ],
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -294,8 +302,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -469,7 +476,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
+          )
         );
       },
     );
@@ -514,8 +521,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -613,8 +619,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -753,8 +758,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ),
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -820,8 +824,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -910,76 +913,22 @@ class _HomePageState extends ConsumerState<HomePage>
 
   // Barre de navigation inférieure
   Widget _buildBottomNavBar() {
-    final List<Map<String, dynamic>> items = [
-      {'icon': Icons.home, 'label': 'Accueil'},
-      {'icon': Icons.people, 'label': 'Amis'},
-      {'icon': Icons.notifications, 'label': 'Notifications'},
-      {'icon': Icons.calendar_today, 'label': 'Réservations'},
-      {'icon': Icons.logout, 'label': 'Déconnexion'},
-    ];
+    return BottomNavBar(
+      selectedIndex: _selectedIndex,
+      onItemSelected: (index) {
+        setState(() {
+          _selectedIndex = index;
+        });
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(items.length, (index) {
-          return InkWell(
-            onTap: () {
-              if (index == 4) {
-                // Si c'est le bouton de déconnexion
-                // Naviguer vers la page initiale (LandingPage)
-                ref.read(authProvider.notifier).logout();
-
-                Navigator.of(context)
-                    .pushNamedAndRemoveUntil('/', (route) => false);
-              } else if (index == 1) {
-                // Si c'est le bouton des amis
-                // Naviguer vers la page des amis
-                Navigator.of(context).pushNamed('/friends');
-              } else {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              }
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  items[index]['icon'],
-                  color: _selectedIndex == index
-                      ? const Color(0xFF1E88E5)
-                      : Colors.grey.shade400,
-                  size: 22,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  items[index]['label'],
-                  style: TextStyle(
-                    color: _selectedIndex == index
-                        ? const Color(0xFF1E88E5)
-                        : Colors.grey.shade400,
-                    fontSize: 11,
-                    fontWeight: _selectedIndex == index
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
-      ),
+        if (index == 4) {
+          // Si c'est le bouton de déconnexion
+          ref.read(authProvider.notifier).logout();
+          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        } else if (index == 1) {
+          // Si c'est le bouton des amis
+          Navigator.of(context).pushNamed('/friends');
+        }
+      },
     );
   }
 }

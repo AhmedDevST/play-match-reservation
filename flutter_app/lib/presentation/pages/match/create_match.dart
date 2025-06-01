@@ -38,7 +38,7 @@ class _CreateMatchState extends State<CreateMatch>with SingleTickerProviderState
     _searchController.addListener(() {
       EasyDebounce.debounce(
         'search-debouncer', // unique tag
-        Duration(milliseconds: 500), // debounce duration
+        const Duration(milliseconds: 500), // debounce duration
         () => _filterTeams(_searchController.text), // function to call
       );
     });

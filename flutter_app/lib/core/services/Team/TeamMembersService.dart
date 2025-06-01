@@ -9,7 +9,7 @@ class TeamMembersService {
     try {
       print('=== getTeamMembers called ===');
       print('teamId: $teamId');
-      print('token: ${token.length > 20 ? token.substring(0, 20) + '...' : token}');
+      print('token: ${token.length > 20 ? '${token.substring(0, 20)}...' : token}');
 
       final url = '$API_URL/api/teams/$teamId/members';
       print('URL: $url');
