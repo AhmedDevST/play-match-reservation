@@ -38,7 +38,8 @@ class Team extends Model
     }
     public function players()
     {
-        return $this->belongsToMany(User::class, 'user_team_links');
+        return $this->belongsToMany(User::class, 'user_team_links')
+            ->withPivot('is_captain', 'has_left_team');
     }
 
     public function captain()

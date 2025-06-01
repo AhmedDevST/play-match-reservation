@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\GameResource;
+use App\Http\Resources\SportFacilityResource;
 use App\Http\Resources\TeamResource;
+use App\Http\Resources\TimeSlotInstanceResource;
+use App\Models\Game;
 use App\Models\SportFacility;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -28,6 +32,15 @@ class GameController extends Controller
             ->filter();
         return response()->json([
             'user_teams' => TeamResource::collection($userTeams),
+        ]);
+    }
+    public function show($gameId)
+    {
+        $game = Game::with(['teamMatches.team.players','teamMatches.team.sport','reservation.TimeSlotInstance.recurringTimeSlot.sportFacility'])->findOrFail($gameId);
+        return response()->json([
+            'game' => new GameResource($game),
+            'facility' => new SportFacilityResource($game->reservation->timeSlotInstance->recurringTimeSlot->sportFacility),
+            'time_slot' => new TimeSlotInstanceResource($game->reservation->timeSlotInstance),
         ]);
     }
 }

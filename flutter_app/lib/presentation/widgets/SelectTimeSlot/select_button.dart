@@ -19,7 +19,7 @@ class SelectButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: isEnabled ? onPressed : null,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
+            backgroundColor: Theme.of(context).primaryColor,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),

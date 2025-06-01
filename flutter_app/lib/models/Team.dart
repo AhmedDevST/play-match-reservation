@@ -1,6 +1,9 @@
 import 'package:flutter_app/models/Sport.dart';
 import 'package:flutter_app/core/config/apiConfig.dart';
 import 'package:flutter_app/models/Sport.dart';
+import 'package:flutter_app/models/TeamPlayer.dart';
+import 'package:flutter_app/models/user.dart';
+
 class Team {
   final int id;
   final String name;
@@ -8,7 +11,7 @@ class Team {
   final String? image;
   final double averageRating;
   final Sport sport;
-  final Sport sport;
+  List<TeamPlayer>? players;
 
   Team({
     required this.id,
@@ -17,7 +20,7 @@ class Team {
     this.image,
     required this.averageRating,
     required this.sport,
-    required this.sport,
+    this.players = const [],
   });
 
   factory Team.fromJson(Map<String, dynamic> json) {
@@ -26,9 +29,12 @@ class Team {
       name: json['name'],
       totalScore: json['total_score'] ?? 0,
       image: json['image'],
-      totalScore: json['total_score'],
       averageRating: (json['average_rating'] as num).toDouble(),
       sport: Sport.fromJson(json['sport']),
+      players: json['players'] != null
+          ? List<TeamPlayer>.from(
+              json['players'].map((x) => TeamPlayer.fromJson(x)))
+          : null,
     );
   }
 

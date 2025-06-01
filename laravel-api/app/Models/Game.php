@@ -33,7 +33,7 @@ class Game  extends Model
 
     public function teamMatches(): HasMany
     {
-        return $this->hasMany(TeamMatch::class);
+        return $this->hasMany(TeamMatch::class, 'match_id');
     }
     public function invitations()
     {

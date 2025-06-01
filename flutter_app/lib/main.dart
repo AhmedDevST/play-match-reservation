@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/presentation/pages/match/match_details.dart';
+import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_app/presentation/pages/landing/landing_page.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_app/presentation/pages/Team/User_Team_Dash.dart';
 import 'package:flutter_app/presentation/pages/Team/Create_Team.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_invitations.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
+import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
 import 'package:flutter_app/core/config/routes.dart';
 
 void main() {
@@ -27,7 +30,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: Routes.landing,
+      initialRoute: Routes.myBooking,
       onGenerateRoute: (RouteSettings settings) {
         return MaterialPageRoute(
           settings: settings,
@@ -35,6 +38,10 @@ class MyApp extends StatelessWidget {
             switch (settings.name) {
               case Routes.landing:
                 return const LandingPage();
+              case Routes.booking:
+                return const SelectFacilitySport();
+              case Routes.myBooking:
+                return const MyBooking();
               case Routes.teamDashboard:
                 return const UserTeamDash();
               case Routes.createTeam:

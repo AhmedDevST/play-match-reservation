@@ -110,9 +110,10 @@ class TeamController extends Controller
 
     public function search(Request $request)
     {
-
-        //update serach to serach team that have the same sport as the user captain based on seletion team sport it will be in request
-        $search = $request->input('q');
+        $name = $request->input('name');
+        $sportId = $request->input('sport');
+        $limit = $request->input('limit', 10);
+        $selectedTeamId = $request->input('exclude');
 
         $teams = Team::with('sport')
             ->when($name, fn($query) => $query->where('name', 'like', '%' . $name . '%'))
@@ -215,10 +216,10 @@ class TeamController extends Controller
     public function myTeams()
     {
         $user = Auth::user();
-        $teams = Team::whereHas('userTeamLinks', function($query) use ($user) {
+        $teams = Team::whereHas('userTeamLinks', function ($query) use ($user) {
             $query->where('user_id', $user->id)
-                  ->where('is_captain', true)
-                  ->where('has_left_team', false);
+                ->where('is_captain', true)
+                ->where('has_left_team', false);
         })->with(['captain', 'members', 'sport'])->get();
 
         return TeamResource::collection($teams);
@@ -230,7 +231,7 @@ class TeamController extends Controller
     public function testMyTeams()
     {
         $userId = 1; // Toujours utiliser l'utilisateur 1
-        $userTeamLinks = UserTeamLink::with(['team' => function($query) {
+        $userTeamLinks = UserTeamLink::with(['team' => function ($query) {
             $query->with('sport');
         }, 'user'])->where('user_id', $userId)->get();
 

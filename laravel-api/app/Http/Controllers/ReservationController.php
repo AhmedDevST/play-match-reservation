@@ -8,7 +8,9 @@ use App\Enums\MatchType;
 use App\Enums\ReservationStatus;
 use App\Enums\TimeSlotsStatus;
 use App\Enums\TypeInvitation;
+use App\Http\Resources\ReservationResource;
 use App\Models\Sport;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\SportResource;
 use App\Http\Resources\SportFacilityResource;
 use App\Models\Game;
@@ -24,7 +26,23 @@ use Illuminate\Validation\Rules\Enum;
 
 class ReservationController extends Controller
 {
-    public function index() {}
+    public function getUserReservations($userId)
+    {
+        $reservations = Reservation::with([
+            'TimeSlotInstance.recurringTimeSlot.sportFacility',
+            'user',
+            'game.teamMatches.team.players',
+            'game.teamMatches.team.sport',
+        ])->where('user_id', $userId)->get();
+
+
+        return response()->json([
+            'reservations' => ReservationResource::collection($reservations),
+            'message' => 'User reservations retrieved successfully.',
+            'success' => true,
+        ]);
+    }
+
     public function init(Request $request)
     {
         $sports = Sport::all();
@@ -46,14 +64,23 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         if ($request->has('is_match') == false) {
-            dd('Reservation logic goes here');
-            $validated = $request->validate([
+            $validator = Validator::make($request->all(), [
                 'time_slot_id' => [
                     'required',
                     Rule::exists('time_slot_instances', 'id')->where('status', 'available'),
                 ],
                 'user_id' => 'required|exists:users,id',
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'errors' => $validator->errors()->all(),
+                    'success' => false,
+                    'message' => 'Validation failed.'
+                ], 422);
+            }
+
+            $validated = $validator->validated();
             try {
                 DB::beginTransaction();
 
@@ -74,6 +101,7 @@ class ReservationController extends Controller
 
                 return response()->json([
                     'message' => 'Reservation created successfully.',
+                    'success' => true,
                     //'reservation' => $reservation,
                 ], 201);
             } catch (\Exception $e) {
@@ -81,12 +109,14 @@ class ReservationController extends Controller
 
                 return response()->json([
                     'message' => 'Reservation failed.',
+                    'success' => false,
                     //'error' => $e->getMessage(),
                 ], 500);
             }
         } else {
-            //validate the request for match reservation
-            $validated = $request->validate([
+
+            // Step 1: Basic Laravel validation
+            $validator = Validator::make($request->all(), [
                 'time_slot_id' => [
                     'required',
                     Rule::exists('time_slot_instances', 'id')->where('status', 'available'),
@@ -97,86 +127,89 @@ class ReservationController extends Controller
                 'team1_id' => 'required|exists:teams,id',
                 'team2_id' => 'nullable|exists:teams,id',
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'errors' => $validator->errors()->all(),
+                    'success' => false,
+                    'message' => 'Validation failed.'
+                ], 422);
+            }
+
+            $validated = $validator->validated();
+            // Step 2: Load models
             $matchType = $validated['match_type'];
             $team1 = Team::find($validated['team1_id']);
             $team2 = isset($validated['team2_id']) ? Team::find($validated['team2_id']) : null;
-
-            // Check if the captain of team1 adn team2 are exists
-            if (!$team1->captain || ($team2 && !$team2->captain)) {
-                return response()->json([
-                    'message' => 'Both teams must have a captain.',
-                ], 422);
-            }
-            // Validate team 1 player count
-            $team1PlayerCount = $team1->players()->count();
             $sport = $team1->sport;
-            if ($team1PlayerCount < $sport->min_players || $team1PlayerCount > $sport->max_players) {
-                return response()->json([
-                    'message' => "Team 1 must have between {$sport->min_players} and {$sport->max_players} players.",
-                ], 422);
+            $errors = [];
+
+            // Step 3: Business rule validation
+            if (!$team1->captain) {
+                $errors[] = 'Team 1 must have a captain.';
             }
-            // Validate team 2 player count only if team2 exists
+            if ($team2 && !$team2->captain) {
+                $errors[] = 'Team 2 must have a captain.';
+            }
+
+            $team1PlayerCount = $team1->players()->count();
+            if ($team1PlayerCount < $sport->min_players || $team1PlayerCount > $sport->max_players) {
+                $errors[] = "Team 1 must have between {$sport->min_players} and {$sport->max_players} players.";
+            }
+
             if ($team2) {
                 $team2PlayerCount = $team2->players()->count();
                 if ($team2PlayerCount < $sport->min_players || $team2PlayerCount > $sport->max_players) {
-                    return response()->json([
-                        'message' => "Team 2 must have between {$sport->min_players} and {$sport->max_players} players.",
-                    ], 422);
+                    $errors[] = "Team 2 must have between {$sport->min_players} and {$sport->max_players} players.";
                 }
             }
 
-            //test facility sport match in the sport's team
+            // Step 4: Facility and sport compatibility
             $timeSlot = TimeSlotInstance::with('recurringTimeSlot.sportFacility.sports')->findOrFail($validated['time_slot_id']);
-            $sportFacility = $timeSlot->recurringTimeSlot->sportFacility;
+            $facilitySportIds = $timeSlot->recurringTimeSlot->sportFacility->sports->pluck('id')->toArray();
 
-            $facilitySportIds = $sportFacility->sports->pluck('id')->toArray();
             if (!in_array($team1->sport_id, $facilitySportIds)) {
-                return response()->json([
-                    'message' => 'Team 1 sport does not match the facility sports.',
-                ], 422);
+                $errors[] = 'Team 1 sport does not match the facility sports.';
             }
 
             if ($team2 && !in_array($team2->sport_id, $facilitySportIds)) {
-                return response()->json([
-                    'message' => 'Team 2 sport does not match the facility sports.',
-                ], 422);
+                $errors[] = 'Team 2 sport does not match the facility sports.';
             }
 
             if ($team2) {
-                // Check if both teams belong to the same sport
                 if ($team1->sport_id !== $team2->sport_id) {
-                    return response()->json([
-                        'message' => 'Both teams must belong to the same sport.',
-                    ], 422);
+                    $errors[] = 'Both teams must belong to the same sport.';
                 }
                 if ($team1->id == $team2->id) {
-                    return response()->json([
-                        'message' => ' Teams must be different.',
-                    ], 422);
+                    $errors[] = 'Teams must be different.';
                 }
-            } else {
-                // If it's a private match, team2 must be provided
-                return response()->json([
-                    'message' => 'Private matches require a second team.',
-                ], 422);
+            } elseif ($matchType === MatchType::PRIVATE->value) {
+                $errors[] = 'Private matches require a second team.';
             }
 
-           // try {
-                //   DB::beginTransaction();
-                //create match
+            // Step 5: If any errors exist, return them
+            if (!empty($errors)) {
+                return response()->json([
+                    'errors' => $errors,
+                    'success' => false,
+                    'message' => 'Validation failed.'
+                ], 422);
+            }
+            try {
+                DB::beginTransaction();
+                // Step 6: Proceed with match, reservation, etc.
                 $match = Game::create([
                     'type' => $matchType,
                     'status' => MatchStatus::PENDING,
                 ]);
 
-                // Add team 1 (always)
                 TeamMatch::create([
                     'team_id' => $validated['team1_id'],
                     'match_id' => $match->id,
                     'score' => 0,
                     'is_winner' => false,
                 ]);
-                // Add team 2 only if match is private and team2 exists
+
                 if ($matchType === MatchType::PRIVATE->value) {
                     TeamMatch::create([
                         'team_id' => $validated['team2_id'],
@@ -185,7 +218,7 @@ class ReservationController extends Controller
                         'is_winner' => false,
                     ]);
                 }
-                // Create the reservation with status pending
+
                 $reservation = Reservation::create([
                     'time_slot_instance_id' => $validated['time_slot_id'],
                     'user_id' => $validated['user_id'],
@@ -196,37 +229,33 @@ class ReservationController extends Controller
                     'status' => ReservationStatus::PENDING,
                 ]);
 
-                // Update the status of the time slot instance to reserved
                 $timeSlotInstance = $reservation->TimeSlotInstance;
                 $timeSlotInstance->status = TimeSlotsStatus::RESERVED;
                 $timeSlotInstance->save();
 
-                // For private matches, create invitation
                 if ($matchType === MatchType::PRIVATE->value) {
-                    $captain1Id = $team1->captain->user_id;
-                    $captain2Id = $team2->captain->user_id;
                     $invitation = new Invitation([
-                        'sender_id' => $captain1Id,
-                        'receiver_id' => $captain2Id,
+                        'sender_id' => $team1->captain->user_id,
+                        'receiver_id' => $team2->captain->user_id,
                         'type' => TypeInvitation::MATCH->value,
                         'status' => InvitationStatus::PENDING->value,
                     ]);
                     $invitation->invitabl()->associate($match);
                     $invitation->save();
                 }
-                //   DB::commit();
+
                 return response()->json([
                     'message' => 'Reservation created successfully.',
-                    //'reservation' => $reservation,
+                    'success' => true,
                 ], 201);
-       //     } catch (\Exception $e) {
-                /// DB::rollBack();
+            } catch (\Exception $e) {
+                DB::rollBack();
 
-                //return response()->json([
-               //     'message' => 'Reservation failed.',
-                    //'error' => $e->getMessage(),
-             //   ], 500);
-           // }
+                return response()->json([
+                    'message' => 'Reservation failed.',
+                    'success' => false,
+                ], 500);
+            }
         }
     }
 }

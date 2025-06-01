@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/core/services/response/ApiResponse.dart';
 import 'package:flutter_app/models/Game.dart';
 import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
@@ -48,7 +49,8 @@ class BookingSummaryScreen extends StatelessWidget {
           child: CircularProgressIndicator(),
         ),
       );
-      bool success = await saveReservation(reservation.timeSlot!.id);
+      ApiResponse result = await saveReservation(reservation);
+      bool success = result.success;
 
       Navigator.of(context).pop();
       // Close the loading dialog
@@ -58,13 +60,12 @@ class BookingSummaryScreen extends StatelessWidget {
         barrierDismissible: false,
         builder: (context) => StatusDialog(
           title: success ? 'Success!' : 'Error',
-          description: success
-              ? 'Your booking has been confirmed.'
-              : 'Failed to confirm booking. Please try again.',
+          description: result.message,
           lottieUrl: success
               ? 'https://lottie.host/52e62b1f-8797-41b9-9dca-9125f4912f36/teoKcK9fNs.json'
               : 'https://lottie.host/c6a222b2-e446-4f5b-b67c-29f5fa692e86/XaOTwLmn2R.json',
           isSuccess: success,
+          errors: result.errors,
         ),
       );
       if (success) {

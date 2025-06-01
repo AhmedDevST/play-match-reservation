@@ -119,8 +119,11 @@ class _CreateMatchState extends State<CreateMatch>
       team1: selectedTeam!,
       opponentTeam: isPrivateMatch ? invitedTeam : null,
       type: isPrivateMatch ? GameType.private : GameType.public,
+      team1Score: 0,
+      opponentScore: 0,
     );
     widget.reservation.game = newGame;
+    widget.reservation.autoConfirm = autoConfirm;
     Navigator.push(
       context,
       MaterialPageRoute(

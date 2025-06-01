@@ -42,19 +42,29 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
   }
 
   Future<void> initTimeSlots() async {
-    setState(() => isLoading = true);
-    final loadedTimeSlots =
-        await fetchInitTimeSlots(widget.reservation.facility.id);
-    setState(() {
-      isLoading = false;
-      timeSlots = loadedTimeSlots.timeSlots;
-      timeZones = loadedTimeSlots.timeZones;
-      customDates = loadedTimeSlots.dates;
-      selectedTimeZone = timeZones.first;
-    });
+    try {
+      setState(() => isLoading = true);
+      final loadedTimeSlots =
+          await fetchInitTimeSlots(widget.reservation.facility.id);
+
+      setState(() {
+        timeSlots = loadedTimeSlots.timeSlots;
+        timeZones = loadedTimeSlots.timeZones;
+        customDates = loadedTimeSlots.dates;
+        selectedTimeZone = timeZones.first;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+      print("Error loading time slots: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to load time slots")),
+      );
+    }
   }
 
   Future<void> loadTimeSlots() async {
+    if (customDates.isEmpty) return;
     setState(() => isLoading = true);
     List<TimeSlot> loadedTimeSlots = await fetchTimeSlots(
         widget.reservation.facility.id, customDates[selectedDateIndex]);
@@ -65,8 +75,10 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
   }
 
   void _onDateSelected(int index) {
-    setState(() => selectedDateIndex = index);
-    loadTimeSlots();
+    if (index < customDates.length) {
+      setState(() => selectedDateIndex = index);
+      loadTimeSlots();
+    }
   }
 
   void _onTimeZoneSelected(TimeZone timeZone) {
@@ -87,7 +99,7 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
   void _onSelectPressed() async {
     if (selectedTimeSlot != null) {
       widget.reservation.timeSlot = selectedTimeSlot;
-      widget.reservation.game = null; 
+      widget.reservation.game = null;
       //check if user is a captain of a team of available sports in this facility
       final result = await showDialog<bool>(
         context: context,
@@ -100,11 +112,12 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
             builder: (context) => CreateMatch(reservation: widget.reservation),
           ),
         );
-      }else {
-         Navigator.push(
+      } else {
+        Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => BookingSummaryScreen(reservation: widget.reservation),
+            builder: (context) =>
+                BookingSummaryScreen(reservation: widget.reservation),
           ),
         );
       }
@@ -118,7 +131,6 @@ class _SelectTimeSlotState extends State<SelectTimeSlot> {
         title: Text(
           widget.reservation.facility.name,
           style: TextStyle(color: Colors.white),
-          
         ),
         backgroundColor: Theme.of(context).primaryColor,
       ),
