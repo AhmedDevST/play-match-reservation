@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/presentation/pages/Notification/Notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:flutter_app/presentation/pages/landing/landing_page.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_app/presentation/pages/Team/User_Team_Dash.dart';
 import 'package:flutter_app/presentation/pages/Team/Create_Team.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_invitations.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
+import 'package:flutter_app/presentation/pages/profile/profile_page.dart';
 import 'package:flutter_app/core/config/routes.dart';
 
 void main() {
@@ -46,6 +48,10 @@ class MyApp extends StatelessWidget {
               case Routes.teamDetails:
                 final teamId = settings.arguments as int;
                 return TeamDetails(teamId: teamId);
+              case Routes.profile:
+                return const ProfilePage();
+              case Routes.NotificationsPage:
+                return const NotificationsPage();
               default:
                 return const UserTeamDash();
             }

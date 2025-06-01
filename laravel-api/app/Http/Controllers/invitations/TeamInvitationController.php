@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Invitation;
 use App\Models\Team;
 use App\Models\User;
+use App\Models\Notification;
 use App\Enums\TypeInvitation;
 use App\Enums\InvitationStatus;
+use App\Enums\NotificationType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -93,10 +95,12 @@ class TeamInvitationController extends Controller
             'invitable_id' => $team->id
         ]);
 
+
         return response()->json([
             'message' => 'Invitation envoyée avec succès',
-            'invitation' => $invitation->load(['sender', 'receiver'])
+            'invitation' => $invitation->load(['sender', 'receiver']),
         ], 201);
+
     }
 
     /**

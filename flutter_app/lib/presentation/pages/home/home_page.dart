@@ -946,6 +946,11 @@ class _HomePageState extends ConsumerState<HomePage>
                 // Si c'est le bouton des amis
                 // Naviguer vers la page des amis
                 Navigator.of(context).pushNamed('/friends');
+              } else if (index == 2) {
+                // Si c'est le bouton des notifications
+                // Naviguer vers la page des notifications
+                Navigator.of(context).pushNamed('/notifications');
+
               } else {
                 setState(() {
                   _selectedIndex = index;
