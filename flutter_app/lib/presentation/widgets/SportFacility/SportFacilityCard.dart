@@ -73,7 +73,7 @@ class SportFacilityCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.star,
                               color: Colors.amber,
                               size: 18,

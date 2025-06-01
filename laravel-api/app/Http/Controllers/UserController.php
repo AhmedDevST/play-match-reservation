@@ -35,4 +35,17 @@ class UserController extends Controller
         'users' => $users
     ], 200);
 }
+
+    public function getProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'avatar' => $user->avatar,
+            'cover' => $user->cover,
+        ]);
+    }
 }

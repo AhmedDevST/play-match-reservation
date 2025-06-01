@@ -94,6 +94,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Team Invitations
     Route::get('/teams/{team}/available-users', [TeamInvitationController::class, 'getUsersNotInTeamOrInvited']);
+
+    // Route pour récupérer les informations de l'utilisateur connecté
+    Route::get('/user/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
 });
 
 

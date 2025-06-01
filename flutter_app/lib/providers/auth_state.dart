@@ -1,4 +1,5 @@
 import 'package:flutter_app/models/user.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class AuthState {
   final User? user;
@@ -25,6 +26,11 @@ class AuthState {
       refreshToken: refreshToken ?? this.refreshToken,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
     );
+  }
+
+  // Method to set the token
+  AuthState setToken(String token) {
+    return copyWith(accessToken: token);
   }
 
   // État initial (non authentifié)
