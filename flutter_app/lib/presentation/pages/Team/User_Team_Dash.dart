@@ -154,7 +154,7 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CreateTeam(
+                  builder: (context) => const CreateTeam(
                     userId: "1",
                     isTestMode: true,
                   ),

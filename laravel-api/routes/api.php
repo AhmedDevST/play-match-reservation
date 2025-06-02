@@ -12,6 +12,7 @@ use App\Http\Controllers\Invitations\TeamInvitationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
@@ -24,11 +25,29 @@ Route::post('/UserTeam', [UserTeamController::class, 'createTeam']);
 // Get Sports
 Route::get('/sports', [SportController::class, 'index']);
 
+
+
 // Reservation
 Route::get('/reservation/init', [ReservationController::class, 'init']);
+Route::post('/reservation', [ReservationController::class, 'store']);
+Route::get('/user/{user}/reservations', [ReservationController::class, 'getUserReservations']);
 
-// Get facilities
+
+// facilities
 Route::get('/sport-facilities', [SportFacilityController::class, 'index']);
+
+// Time slots
+Route::get('/sport-facilities/{facilityId}/available-time-slots', [TimeSlotInstanceController::class, 'getAvailableTimeSlots']);
+Route::get('/sport-facilities/{facilityId}/init-time-slots', [TimeSlotInstanceController::class, 'initTimeSlotInstances']);
+
+//init match
+Route::get('/sport-facilities/{facilityId}/init-game', [GameController::class, 'initGame']);
+Route::get('/games/{game}', [GameController::class, 'show']);
+
+
+// team
+Route::get('/teams/search', [TeamController::class, 'search']);
+
 
 Route::get('/test-route', function () {
     return response()->json(['message' => 'Route works!']);
@@ -79,7 +98,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getPendingInvitations']);
         Route::post('/{invitation}/respond', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'respond']);
     });
-    
+
     // Get invited users for a specific team
     Route::get('/team/{team}/invited-users', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'getInvitedUsers']);
 
@@ -88,6 +107,12 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // User Team Details - Détails d'un utilisateur dans une équipe
     Route::get('/teams/{team}/users/{user}/details', [UserTeamDetailsController::class, 'getUserTeamDetails']);
+
+    // Route pour récupérer les informations de l'utilisateur connecté
+    Route::get('/user/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
 });
 
 
+//invitations
+ Route::patch('/invitations/{id}/status', [InvitationController::class, 'updateStatus']);
+Route::post('/invitations', [InvitationController::class, 'store']);

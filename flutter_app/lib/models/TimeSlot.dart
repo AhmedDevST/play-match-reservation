@@ -6,6 +6,7 @@ class TimeSlot {
   final String endTime;
   final String  status;
   final bool isException;
+  final DateTime date;
   final String? exceptionReason;
   final TimeZone timeZone;
  
@@ -17,6 +18,7 @@ class TimeSlot {
     required this.isException,
     required this.exceptionReason,
     required this.timeZone,
+    required this.date,
   });
 
   factory TimeSlot.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class TimeSlot {
       isException: json['is_exception'],
       exceptionReason: json['exception_reason'],
       timeZone: TimeZone.fromJson(json['time_zone']),
+      date: DateTime.parse(json['date']),
     );
   }
 
@@ -40,6 +43,7 @@ class TimeSlot {
       'is_exception': isException,
       'exception_reason': exceptionReason,
       'time_zone': timeZone.toJson(),
+      'date': date.toIso8601String(),
     };
   }
 }

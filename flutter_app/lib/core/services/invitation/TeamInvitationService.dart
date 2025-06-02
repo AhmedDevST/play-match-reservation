@@ -119,7 +119,7 @@ class TeamInvitationService {
   Future<List<Invitation>> getInvitedUsers(int teamId, String token) async {
     try {
       final response = await http.get(
-        Uri.parse('${API_URL}/api/team/$teamId/invited-users'),
+        Uri.parse('$API_URL/api/team/$teamId/invited-users'),
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

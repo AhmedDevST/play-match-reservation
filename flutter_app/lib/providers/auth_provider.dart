@@ -138,3 +138,5 @@ final authHeadersProvider = Provider<Map<String, String>>((ref) {
     'Content-Type': 'application/json',
   };
 });
+
+final rememberMeProvider = StateProvider<bool>((ref) => false);

@@ -197,7 +197,7 @@ class _CreateTeamState extends ConsumerState<CreateTeam> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      BorderSide(color: const Color(0xFF1E88E5), width: 1.5),
+                      const BorderSide(color: Color(0xFF1E88E5), width: 1.5),
                 ),
               ),
               validator: (value) {
@@ -235,7 +235,7 @@ class _CreateTeamState extends ConsumerState<CreateTeam> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide:
-                      BorderSide(color: const Color(0xFF1E88E5), width: 1.5),
+                      const BorderSide(color: Color(0xFF1E88E5), width: 1.5),
                 ),
               ),
               items: _sports.map((sport) {

@@ -8,5 +8,9 @@ class Routes {
   static const String teamInvitations = '/team-invitations';
   static const String teamDetails = '/team-details';
   static const String profile = '/profile';
-  static const String NotificationsPage = '/notifications';
+  static const String booking = '/booking';
+  static const String myBooking = '/my-booking';
+  static const String matchDetails = '/match-details';
+  static const String notifications = '/notifications';
+  
 }

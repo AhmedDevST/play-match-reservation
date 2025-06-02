@@ -1,93 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
   _ProfilePageState createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStateMixin {
+class _ProfilePageState extends ConsumerState<ProfilePage>
+    with SingleTickerProviderStateMixin {
   // Pour l'animation
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
-  // Données utilisateur (à remplacer par des données réelles)
-  final Map<String, dynamic> _userData = {
-    'name': 'Mohamed Alami',
-    'email': 'mohamed.alami@gmail.com',
-    'phone': '+212 6 12 34 56 78',
-    'address': 'Casablanca, Maroc',
-    'avatar': 'assets/images/avatar.jpg',
-    'cover': 'assets/images/cover.jpg',
-    'memberSince': 'Juin 2023',
-    'rating': 4.8,
-    'bio': 'Passionné de sport, je pratique le football et le basketball régulièrement. Toujours à la recherche de nouveaux terrains pour jouer !',
-  };
-  
-  // Statistiques utilisateur
-  final List<Map<String, dynamic>> _stats = [
-    {'icon': Icons.calendar_today, 'value': '36', 'label': 'Réservations'},
-    {'icon': Icons.sports_soccer, 'value': '24', 'label': 'Matchs joués'},
-    {'icon': Icons.access_time, 'value': '48h', 'label': 'Temps de jeu'},
-    {'icon': Icons.people, 'value': '12', 'label': 'Amis'},
-  ];
-  
-  // Historique des activités
-  final List<Map<String, dynamic>> _activities = [
-    {
-      'type': 'reservation',
-      'title': 'Terrain de Football',
-      'date': '15 Juin 2023',
-      'icon': Icons.sports_soccer,
-      'status': 'completed',
-    },
-    {
-      'type': 'rating',
-      'title': 'Vous avez noté Terrain de Basketball',
-      'date': '10 Juin 2023',
-      'icon': Icons.star,
-      'rating': 5,
-    },
-    {
-      'type': 'reservation',
-      'title': 'Terrain de Handball',
-      'date': '05 Juin 2023',
-      'icon': Icons.sports_volleyball,
-      'status': 'completed',
-    },
-    {
-      'type': 'friend',
-      'title': 'Vous êtes devenu ami avec Karim',
-      'date': '01 Juin 2023',
-      'icon': Icons.person_add,
-    },
-  ];
-  
-  // Préférences sportives
-  final List<Map<String, dynamic>> _preferences = [
-    {'sport': 'Football', 'value': 0.8},
-    {'sport': 'Basketball', 'value': 0.6},
-    {'sport': 'Handball', 'value': 0.4},
-  ];
 
   @override
   void initState() {
     super.initState();
-    
+
     // Configuration de l'animation
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOut,
       ),
     );
-    
+
     _animationController.forward();
   }
 
@@ -99,49 +43,61 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(currentUserProvider);
+
+    print(user!.fullImagePath);
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Text('User not authenticated. Please log in.'),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          // En-tête avec photo de couverture et profil
-          _buildAppBar(),
-          
-          // Contenu principal
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Informations utilisateur
-                  _buildUserInfo(),
-                  
-                  // Statistiques utilisateur
-                  _buildUserStats(),
-                  
-                  // Préférences sportives
-                  _buildSportPreferences(),
-                  
-                  // Historique des activités
-                  _buildActivityHistory(),
-                  
-                  // Espacement en bas
-                  const SizedBox(height: 30),
-                ],
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // En-tête avec photo de couverture et profil
+            _buildAppBar(user),
+            
+            // Contenu principal
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Informations utilisateur
+                    _buildUserInfo(user),
+                    
+                    // Statistiques utilisateur
+                    _buildUserStats(),
+                    
+                    // Préférences sportives
+                    _buildSportPreferences(),
+                    
+                    // Historique des activités
+                    _buildActivityHistory(),
+                    
+                    // Espacement en bas
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   // En-tête avec photo de couverture et profil
-  Widget _buildAppBar() {
+  Widget _buildAppBar(userData) {
     return SliverAppBar(
       expandedHeight: 240,
       pinned: true,
-       
       backgroundColor: const Color.fromARGB(255, 50, 143, 224),
       leading: Container(
         margin: const EdgeInsets.all(8),
@@ -175,18 +131,16 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
         background: Stack(
           children: [
             // Image de couverture
-            Positioned.fill(
-              child: Image.asset(
-                _userData['cover'],
+            Positioned.fill(              child: Image.network(
+              userData.fullImagePath ,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: const Color(0xFF1E88E5),
-                  );
-                },
+                // errorBuilder: (context, error, stackTrace) {
+                //   return Container(
+                //     color: const Color(0xFF1E88E5),
+                //   );
+                // },
               ),
             ),
-            
             // Overlay dégradé
             Positioned.fill(
               child: Container(
@@ -203,7 +157,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 ),
               ),
             ),
-            
             // Photo de profil et nom
             Positioned(
               bottom: 60,
@@ -234,9 +187,10 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(40),
-                            child: Image.asset(
-                              _userData['avatar'],
+                            borderRadius: BorderRadius.circular(40),                            child: Image.network(
+                              userData.fullImagePath != null 
+                                ? 'http://localhost:9000/storage/${userData.fullImagePath}'
+                                : 'http://localhost:9000/storage/user_images/default.jpeg',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
@@ -267,7 +221,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                               child: Transform.translate(
                                 offset: Offset(20 - 20 * _fadeAnimation.value, 0),
                                 child: Text(
-                                  _userData['name'],
+                                  userData.name ?? 'Utilisateur',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 24,
@@ -281,8 +235,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                     ],
                                   ),
                                 ),
-                              ),
-                            );
+                              ));
                           },
                         ),
                         const SizedBox(height: 4),
@@ -302,7 +255,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      'Membre depuis ${_userData['memberSince']}',
+                                      'Membre depuis ${userData.memberSince ?? 'N/A'}',
                                       style: const TextStyle(
                                         color: Colors.white70,
                                         fontSize: 14,
@@ -317,8 +270,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                                     ),
                                   ],
                                 ),
-                              ),
-                            );
+                              ));
                           },
                         ),
                       ],
@@ -327,7 +279,6 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                 ],
               ),
             ),
-            
             // Note d'évaluation
             Positioned(
               bottom: 15,
@@ -355,7 +306,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            _userData['rating'].toString(),
+                            userData.rating?.toString() ?? '0',
                             style: const TextStyle(
                               color: Colors.black87,
                               fontWeight: FontWeight.bold,
@@ -382,7 +333,7 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
   }
 
   // Informations utilisateur
-  Widget _buildUserInfo() {
+  Widget _buildUserInfo(userData) {
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -404,18 +355,18 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     ),
                   ),
                   const SizedBox(height: 15),
-                  Text(
-                    _userData['bio'],
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade700,
-                      height: 1.5,
+                  if (userData.bio != null) ... [
+                    Text(
+                      userData.bio,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade700,
+                        height: 1.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildInfoItem(Icons.email, 'Email', _userData['email']),
-                  _buildInfoItem(Icons.phone, 'Téléphone', _userData['phone']),
-                  _buildInfoItem(Icons.location_on, 'Adresse', _userData['address']),
+                    const SizedBox(height: 20),
+                  ],
+                  _buildInfoItem(Icons.email, 'Email', userData.email),
                 ],
               ),
             ),
@@ -515,19 +466,17 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     mainAxisSpacing: 15,
                     crossAxisSpacing: 15,
                     childAspectRatio: 2,
-                    children: _stats.map((stat) {
-                      return _buildStatItem(
-                        stat['icon'],
-                        stat['value'],
-                        stat['label'],
-                      );
-                    }).toList(),
+                    children: [
+                      _buildStatItem(Icons.calendar_today, '36', 'Réservations'),
+                      _buildStatItem(Icons.sports_soccer, '24', 'Matchs joués'),
+                      _buildStatItem(Icons.access_time, '48h', 'Temps de jeu'),
+                      _buildStatItem(Icons.people, '12', 'Amis'),
+                    ],
                   ),
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -606,17 +555,15 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     ),
                   ),
                   const SizedBox(height: 15),
-                  ..._preferences.map((pref) {
-                    return _buildPreferenceItem(
-                      pref['sport'],
-                      pref['value'],
-                    );
-                  }),
+                  ...[
+                    _buildPreferenceItem('Football', 0.8),
+                    _buildPreferenceItem('Basketball', 0.6),
+                    _buildPreferenceItem('Handball', 0.4),
+                  ],
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -723,14 +670,41 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
                     ],
                   ),
                   const SizedBox(height: 15),
-                  ..._activities.map((activity) {
+                  ...[
+                    {
+                      'type': 'reservation',
+                      'title': 'Terrain de Football',
+                      'date': '15 Juin 2023',
+                      'icon': Icons.sports_soccer,
+                      'status': 'completed',
+                    },
+                    {
+                      'type': 'rating',
+                      'title': 'Vous avez noté Terrain de Basketball',
+                      'date': '10 Juin 2023',
+                      'icon': Icons.star,
+                      'rating': 5,
+                    },
+                    {
+                      'type': 'reservation',
+                      'title': 'Terrain de Handball',
+                      'date': '05 Juin 2023',
+                      'icon': Icons.sports_volleyball,
+                      'status': 'completed',
+                    },
+                    {
+                      'type': 'friend',
+                      'title': 'Vous êtes devenu ami avec Karim',
+                      'date': '01 Juin 2023',
+                      'icon': Icons.person_add,
+                    },
+                  ].map((activity) {
                     return _buildActivityItem(activity);
                   }),
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -848,4 +822,4 @@ class _ProfilePageState extends State<ProfilePage> with SingleTickerProviderStat
       ),
     );
   }
-} 
+}

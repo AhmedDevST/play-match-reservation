@@ -424,8 +424,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> with TickerProviderStat
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
-        final begin = 0.0;
-        final end = 1.0;
+        const begin = 0.0;
+        const end = 1.0;
         final animValue = Curves.easeInOut.transform(
           ((_animationController.value - delay) % 1.0).clamp(0.0, 1.0)
         );
@@ -435,7 +435,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> with TickerProviderStat
           height: 8 + (4 * animValue),
           width: 8 + (4 * animValue),
           decoration: BoxDecoration(
-            color: Color(0xFF1E88E5).withOpacity(0.6 + (0.4 * animValue)),
+            color: const Color(0xFF1E88E5).withOpacity(0.6 + (0.4 * animValue)),
             shape: BoxShape.circle,
           ),
         );

@@ -173,7 +173,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(110),
+          preferredSize: const Size.fromHeight(110),
           child: Column(
             children: [
               // Barre de recherche
@@ -186,7 +186,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
                   ),
                   child: TextField(
                     controller: _searchController,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       hintText: 'Rechercher des amis...',
                       prefixIcon: Icon(Icons.search, color: Colors.grey),
                       border: InputBorder.none,
@@ -323,8 +323,8 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
                 backgroundColor: const Color(0xFF1E88E5).withOpacity(0.1),
                 child: Text(
                   friend['name'].substring(0, 1),
-                  style: TextStyle(
-                    color: const Color(0xFF1E88E5),
+                  style: const TextStyle(
+                    color: Color(0xFF1E88E5),
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
@@ -510,8 +510,8 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
             backgroundColor: const Color(0xFF1E88E5).withOpacity(0.1),
             child: Text(
               suggestion['name'].substring(0, 1),
-              style: TextStyle(
-                color: const Color(0xFF1E88E5),
+              style: const TextStyle(
+                color: Color(0xFF1E88E5),
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
               ),
@@ -531,7 +531,7 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
           children: [
             Text(
               "${suggestion['mutualFriends']} amis en commun",
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.grey,
                 fontSize: 12,
               ),

@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'package:flutter_app/models/Reservation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_app/models/User.dart';
 import 'package:flutter_app/core/config/apiConfig.dart';
+
+const USER_URL = "$API_URL/api/user";
 
 class UserService {
   Future<List<User>> searchUsers(String query) async {
@@ -54,4 +57,22 @@ class UserService {
 
 
   
+}
+
+Future<List<Reservation>> getReservationOfUser(int user_id) async {
+  print("Calling Fetch Reservation of User");
+  final url = Uri.parse("$USER_URL/$user_id/reservations");
+  final response = await http.get(url);
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return (data['reservations'] as List)
+        .map((item) => Reservation.fromJson(item))
+        .toList();
+  }
+  throw Exception("Failed to fetch reservation of user");
+}
+
+void main() async {
+  final reservations = await getReservationOfUser(1);
+  print(reservations.length);
 }

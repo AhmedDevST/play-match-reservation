@@ -70,14 +70,14 @@ class TimeSlotsList extends StatelessWidget {
                 color: isBooked
                     ? Colors.redAccent
                     : isSelected
-                        ? Colors.blue
+                        ? Theme.of(context).primaryColor
                         : Colors.white,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
                   color: isBooked
                       ? Colors.redAccent
                       : isSelected
-                          ? Colors.blue
+                          ? Theme.of(context).primaryColor
                           : Colors.grey.shade300,
                   width: 1.5,
                 ),

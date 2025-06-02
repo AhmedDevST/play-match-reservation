@@ -54,4 +54,16 @@ class Team extends Model
     {
         return $this->morphMany(Invitation::class, 'invitable');
     }
+      public function players()
+    {
+        return $this->belongsToMany(User::class, 'user_team_links')
+            ->withPivot('is_captain', 'has_left_team');
+    }
+
+    public function captain()
+    {
+        return $this->hasOne(UserTeamLink::class)
+            ->where('is_captain', true)
+            ->where('has_left_team', false);
+    }
 }

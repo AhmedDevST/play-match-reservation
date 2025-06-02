@@ -1,6 +1,5 @@
 <?php
-
-namespace Database\Seeders;
+ namespace Database\Seeders;
 
 use App\Enums\TimeSlotsStatus;
 use Illuminate\Database\Seeder;
@@ -14,60 +13,42 @@ class TimeSlotInstanceSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get the first recurring time slot and time zone IDs
         $recurringTimeSlotId = DB::table('recurring_time_slots')->first()->id;
-        $timeZoneId = DB::table('time_zones')->first()->id;
 
-        // Create time slot instances for the next 7 days
+        // Fetch all time zones
+        $timeZones = DB::table('time_zones')->get();
+
         $timeSlotInstances = [];
         $startDate = Carbon::now()->startOfDay();
 
         for ($i = 0; $i < 7; $i++) {
             $date = $startDate->copy()->addDays($i);
-            
-            // Morning slot
-            $timeSlotInstances[] = [
-                'date' => $date->format('Y-m-d'),
-                'start_time' => '09:00:00',
-                'end_time' => '10:00:00',
-                'recurring_time_slot_id' => $recurringTimeSlotId,
-                'time_zone_id' => $timeZoneId,
-                'status' => TimeSlotsStatus::AVAILABLE->value,
-                'is_exception' => false,
-                'exception_reason' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
 
-            // Afternoon slot
-            $timeSlotInstances[] = [
-                'date' => $date->format('Y-m-d'),
-                'start_time' => '14:00:00',
-                'end_time' => '15:00:00',
-                'recurring_time_slot_id' => $recurringTimeSlotId,
-                'time_zone_id' => $timeZoneId,
-                'status' => TimeSlotsStatus::AVAILABLE->value,
-                'is_exception' => false,
-                'exception_reason' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+            foreach ($timeZones as $timeZone) {
+                // Adjust end time if it is past midnight (like Night time zone)
+                $startDateTime = Carbon::parse($date->format('Y-m-d') . ' ' . $timeZone->start_time);
+                $endDateTime = Carbon::parse($date->format('Y-m-d') . ' ' . $timeZone->end_time);
 
-            // Evening slot
-            $timeSlotInstances[] = [
-                'date' => $date->format('Y-m-d'),
-                'start_time' => '19:00:00',
-                'end_time' => '20:00:00',
-                'recurring_time_slot_id' => $recurringTimeSlotId,
-                'time_zone_id' => $timeZoneId,
-                'status' => TimeSlotsStatus::AVAILABLE->value,
-                'is_exception' => false,
-                'exception_reason' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
+                // If end time is before or equal to start time, it means it goes past midnight
+                if ($endDateTime->lessThanOrEqualTo($startDateTime)) {
+                    $endDateTime->addDay();
+                }
+
+                $timeSlotInstances[] = [
+                    'date' => $date->format('Y-m-d'),
+                    'start_time' => $startDateTime->format('H:i:s'),
+                    'end_time' => $endDateTime->format('H:i:s'),
+                    'recurring_time_slot_id' => $recurringTimeSlotId,
+                    'time_zone_id' => $timeZone->id,
+                    'status' => TimeSlotsStatus::AVAILABLE->value,
+                    'is_exception' => false,
+                    'exception_reason' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
         }
 
         DB::table('time_slot_instances')->insert($timeSlotInstances);
     }
-} 
+}

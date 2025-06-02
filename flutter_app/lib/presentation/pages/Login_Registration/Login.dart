@@ -1,18 +1,20 @@
-import 'dart:convert';
 import 'package:flutter_app/presentation/pages/Login_Registration/SignUp.dart';
-import 'package:http/http.dart' as http;
-
-import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/models/user.dart';
+import 'package:flutter/material.dart';
+import 'dart:ui';
+
+final rememberMeProvider = StateProvider<bool>((ref) => false);
+final passwordVisibilityProvider = StateProvider<bool>((ref) => false);
 
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
 
-  @override
+  @override 
   ConsumerState<Login> createState() => _LoginState();
 }
 
@@ -21,8 +23,6 @@ class _LoginState extends ConsumerState<Login>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isPasswordVisible = false;
-  bool _rememberMe = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -56,59 +56,54 @@ class _LoginState extends ConsumerState<Login>
     });
   }
 
-  Future<void> _SignIn() async {
-    // Utilisez 10.0.2.2 pour l'émulateur Android, qui pointe vers localhost de votre machine
-    final url = Uri.parse('http://localhost:8000/api/login');
+  Future<void> _handleLogin() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final rememberMe = ref.read(rememberMeProvider);
 
     try {
       final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json', // Ajout du header Accept
-        },
+        Uri.parse('http://localhost:8000/api/login'),
+        headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': _emailController.text,
-          'password': _passwordController.text
+          'email': email,
+          'password': password,
+          'remember': rememberMe,
         }),
       );
 
       if (response.statusCode == 200) {
-        // Décoder la réponse JSON
         final data = jsonDecode(response.body);
+        final userData = data['user'];
+        final token = data['token'];
+        
+        // Créer un objet User à partir des données
+        final user = User.fromJson(userData);
 
-        // Créer l'objet User à partir des données reçues
-        final user = User.fromJson(data['user']);
-        print(data['token']);
-
-        // Utiliser le AuthProvider pour gérer l'authentification
+        // Mettre à jour l'état d'authentification
         await ref.read(authProvider.notifier).login(
-              user: user,
-              accessToken: data['token'],
-              refreshToken: data['token'],
-            );
-        print('Im here');
-        // Succès - Navigation vers la page d'accueil
-        if (mounted) {
-          Navigator.pushReplacement(
-              context, MaterialPageRoute(builder: (context) => HomePage()));
-        }
+          user: user,
+          accessToken: token,
+        );
+
+     
+        // Stocker le token dans SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('authToken', token);
+
+        // Navigate to the next page or show success message
+        Navigator.pushReplacementNamed(context, '/home');
       } else {
-        // Erreur
-        final error = jsonDecode(response.body);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur : ${error['message']}')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+        // Handle error response
+        final error = jsonDecode(response.body)['message'];
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur de connexion: $e')),
+          SnackBar(content: Text('Erreur: $error')),
         );
       }
-      print(e);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur réseau: $e')),
+      );
     }
   }
 
@@ -214,34 +209,9 @@ class _LoginState extends ConsumerState<Login>
                                 const SizedBox(height: 20),
 
                                 // Champ mot de passe
-                                _buildAnimatedTextField(
+                                _buildPasswordField(
                                   controller: _passwordController,
                                   hintText: 'Mot de passe',
-                                  prefixIcon: Icons.lock_outline,
-                                  obscureText: !_isPasswordVisible,
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _isPasswordVisible
-                                          ? Icons.visibility_off
-                                          : Icons.visibility,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isPasswordVisible =
-                                            !_isPasswordVisible;
-                                      });
-                                    },
-                                  ),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Veuillez entrer votre mot de passe';
-                                    }
-                                    if (value.length < 6) {
-                                      return 'Le mot de passe doit contenir au moins 6 caractères';
-                                    }
-                                    return null;
-                                  },
                                   delayFactor: 2,
                                 ),
                                 const SizedBox(height: 12),
@@ -252,36 +222,35 @@ class _LoginState extends ConsumerState<Login>
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     // Option Se souvenir de moi
-                                    _buildDelayedAnimation(
-                                      child: Row(
-                                        children: [
-                                          SizedBox(
-                                            height: 24,
-                                            width: 24,
-                                            child: Checkbox(
-                                              value: _rememberMe,
-                                              onChanged: (value) {
-                                                setState(() {
-                                                  _rememberMe = value!;
-                                                });
-                                              },
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(4),
+                                    Consumer(
+                                      builder: (context, ref, _) {
+                                        final rememberMe = ref.watch(rememberMeProvider);
+                                        return Row(
+                                          children: [
+                                            SizedBox(
+                                              height: 24,
+                                              width: 24,
+                                              child: Checkbox(
+                                                value: rememberMe,
+                                                onChanged: (value) {
+                                                  ref.read(rememberMeProvider.notifier).state = value!;
+                                                },
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius: BorderRadius.circular(4),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          const Text(
-                                            'Se souvenir de moi',
-                                            style: TextStyle(
-                                              color: Colors.black54,
-                                              fontSize: 14,
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Se souvenir de moi',
+                                              style: TextStyle(
+                                                color: Colors.black54,
+                                                fontSize: 14,
+                                              ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                      delayFactor: 3,
+                                          ],
+                                        );
+                                      },
                                     ),
 
                                     // Mot de passe oublié
@@ -313,8 +282,8 @@ class _LoginState extends ConsumerState<Login>
                                 // Bouton de connexion
                                 _buildDelayedAnimation(
                                   child: ElevatedButton(
-                                    onPressed: () {
-                                      _SignIn();
+                                    onPressed: () async {
+                                      await _handleLogin();
                                     },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: const Color(0xFF2EE59D),
@@ -457,6 +426,69 @@ class _LoginState extends ConsumerState<Login>
     );
   }
 
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String hintText,
+    required int delayFactor,
+  }) {
+    final isPasswordVisibleNotifier = ValueNotifier<bool>(false);
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: isPasswordVisibleNotifier,
+      builder: (context, isPasswordVisible, child) {
+        return TextFormField(
+          controller: controller,
+          obscureText: !isPasswordVisible,
+          decoration: InputDecoration(
+            hintText: hintText,
+            prefixIcon: Icon(Icons.lock_outline, color: Colors.grey.shade600),
+            suffixIcon: IconButton(
+              icon: Icon(
+                isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                color: Colors.grey.shade600,
+              ),
+              onPressed: () {
+                isPasswordVisibleNotifier.value = !isPasswordVisible;
+              },
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Veuillez entrer un mot de passe';
+            }
+            if (value.length < 6) {
+              return 'Le mot de passe doit contenir au moins 6 caractères';
+            }
+            return null;
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildDelayedAnimation({
     required Widget child,
     required int delayFactor,
@@ -481,6 +513,33 @@ class _LoginState extends ConsumerState<Login>
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
           child: child,
+        );
+      },
+    );
+  }
+}
+
+class PasswordVisibilityIcon extends StatelessWidget {
+  final ValueNotifier<bool> isPasswordVisibleNotifier;
+
+  const PasswordVisibilityIcon({
+    super.key,
+    required this.isPasswordVisibleNotifier,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: isPasswordVisibleNotifier,
+      builder: (context, isPasswordVisible, child) {
+        return IconButton(
+          icon: Icon(
+            isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+            color: Colors.grey.shade600,
+          ),
+          onPressed: () {
+            isPasswordVisibleNotifier.value = !isPasswordVisible;
+          },
         );
       },
     );

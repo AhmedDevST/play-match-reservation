@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_app/presentation/widgets/bottom_nav_bar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -36,6 +38,7 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   void initState() {
     super.initState();
+    
 
     // Configuration de l'animation
     _animationController = AnimationController(
@@ -152,8 +155,14 @@ class _HomePageState extends ConsumerState<HomePage>
                     Hero(
                       tag: 'userAvatar',
                       child: GestureDetector(
-                        onTap: () {
+                        onTap: () async {
+                          // Naviguer vers la page de profil
+                         
+                         final prefs = await SharedPreferences.getInstance();
+                         final token= await  prefs.getString('authToken');
+                        if(token != null) {
                           Navigator.of(context).pushNamed('/profile');
+                        } 
                         },
                         child: Container(
                           height: 40,
@@ -254,8 +263,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ),
               ],
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -294,8 +302,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -469,7 +476,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
+          )
         );
       },
     );
@@ -514,8 +521,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -613,8 +619,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -753,8 +758,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ),
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -820,8 +824,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
@@ -946,11 +949,6 @@ class _HomePageState extends ConsumerState<HomePage>
                 // Si c'est le bouton des amis
                 // Naviguer vers la page des amis
                 Navigator.of(context).pushNamed('/friends');
-              } else if (index == 2) {
-                // Si c'est le bouton des notifications
-                // Naviguer vers la page des notifications
-                Navigator.of(context).pushNamed('/notifications');
-
               } else {
                 setState(() {
                   _selectedIndex = index;
