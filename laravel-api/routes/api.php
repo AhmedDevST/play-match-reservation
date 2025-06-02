@@ -110,6 +110,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Route pour récupérer les informations de l'utilisateur connecté
     Route::get('/user/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
+
+    // Routes pour les notifications
+    Route::prefix('notifications')->group(function () {
+        Route::post('/create', [App\Http\Controllers\NotificationController::class, 'createFromRequest']);
+        Route::get('/user', [App\Http\Controllers\NotificationController::class, 'getUserNotifications']);
+        Route::get('/{notificationId}', [App\Http\Controllers\NotificationController::class, 'getNotification']);
+        Route::patch('/{notificationId}/read', [App\Http\Controllers\NotificationController::class, 'markAsRead']);
+        Route::patch('/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
+        Route::delete('/{notificationId}', [App\Http\Controllers\NotificationController::class, 'delete']);
+    });
 });
 
 

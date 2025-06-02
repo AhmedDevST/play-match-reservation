@@ -96,6 +96,29 @@ class TeamInvitationController extends Controller
         ]);
 
 
+    //Créer une notification pour l'utilisateur invité
+         $notificationController = new \App\Http\Controllers\NotificationController();
+         $notificationController->create(
+             $request->receiver_id,
+             NotificationType::INVITATION_NOTIFICATION,
+             'Invitation d\'équipe',
+             "Vous avez reçu une invitation pour rejoindre l'équipe {$team->name}",
+            //  $team->id,
+            //  Team::class
+            $invitation->id,
+            Invitation::class
+         );
+
+        //    $notification = Notification::create([
+        //         'user_id' => $request->receiver_id,
+                // 'type' => NotificationType::TEAM_NOTIFICATION,
+        //         'title' => 'Invitation d\'équipe',
+        //         'message' => "Vous avez reçu une invitation pour rejoindre l'équipe {$team->name}",
+        //         'is_read' => false,
+        //         'notifiable_id' => $team->id,
+        //         'notifiable_type' => Team::class,
+        //     ]);
+
         return response()->json([
             'message' => 'Invitation envoyée avec succès',
             'invitation' => $invitation->load(['sender', 'receiver']),

@@ -47,7 +47,7 @@ class User {
   String get fullImagePath{
 
     
-      return '$API_URL$profileImage'; // Chemin par défaut
+    return '$API_URL$profileImage'; // Chemin par défaut
   
   }
 }

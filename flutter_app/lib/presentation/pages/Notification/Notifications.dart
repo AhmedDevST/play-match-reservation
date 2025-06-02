@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/core/services/Notification/Notification.dart';
+import 'package:flutter_app/core/services/invitation/TeamInvitationService.dart';
+import 'package:flutter_app/models/Invitation.dart';
+import 'package:flutter_app/models/Notification.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class NotificationsPage extends ConsumerStatefulWidget {
@@ -10,97 +15,80 @@ class NotificationsPage extends ConsumerStatefulWidget {
 
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   String _selectedFilter = 'Tout';
+  late List<NotificationModel> _notifications = [];
+  late List<NotificationModel> _filteredNotifications = [];
+  bool isLoading = false;
+  TeamInvitationService teamInvitationService = TeamInvitationService();
+  @override
+  void initState() {
+    super.initState();
+    LoadNotification();
+  }
 
-  final List<NotificationItem> _notifications = [
-    NotificationItem(
-      id: '1',
-      type: NotificationType.friendNotification,
-      title: 'Demande d\'amitié',
-      message: 'Ahmed Youness vous a envoyé une demande d\'amitié',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      isRead: false,
-      avatarUrl: null,
-      senderName: 'Ahmed Youness',
-    ),
-    NotificationItem(
-      id: '2',
-      type: NotificationType.teamNotification,
-      title: 'Invitation d\'équipe',
-      message: 'Vous avez été invité à rejoindre l\'équipe "Les Tigres"',
-      timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
-      isRead: false,
-      avatarUrl: null,
-      senderName: 'Capitaine',
-    ),
-    NotificationItem(
-      id: '3',
-      type: NotificationType.matchNotification,
-      title: 'Résultat de match',
-      message:
-          'Votre équipe "Les Lions" a gagné le match contre "Les Aigles" 3-2',
-      timestamp: DateTime.now().subtract(const Duration(hours: 1)),
-      isRead: true,
-      avatarUrl: null,
-      senderName: 'Système',
-    ),
-    NotificationItem(
-      id: '4',
-      type: NotificationType.teamNotification,
-      title: 'Nouveau membre',
-      message: 'Sarah Martin a rejoint votre équipe "Les Lions"',
-      timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      isRead: true,
-      avatarUrl: null,
-      senderName: 'Sarah Martin',
-    ),
-    NotificationItem(
-      id: '5',
-      type: NotificationType.matchNotification,
-      title: 'Match programmé',
-      message:
-          'Un nouveau match a été programmé pour demain à 16h00 contre "Les Panthères"',
-      timestamp: DateTime.now().subtract(const Duration(hours: 3)),
-      isRead: true,
-      avatarUrl: null,
-      senderName: 'Capitaine',
-    ),
-    NotificationItem(
-      id: '6',
-      type: NotificationType.friendNotification,
-      title: 'Ami accepté',
-      message: 'Mohamed Hassan a accepté votre demande d\'amitié',
-      timestamp: DateTime.now().subtract(const Duration(hours: 4)),
-      isRead: true,
-      avatarUrl: null,
-      senderName: 'Mohamed Hassan',
-    ),
-  ];
-
-  List<NotificationItem> get _filteredNotifications {
-    if (_selectedFilter == 'Tout') {
-      return _notifications;
+  Future<void> RespondingInvitation(
+      Invitation invitation, InvitationStatus status) async {
+    final authState = ref.read(authProvider);
+    final token = authState.accessToken;
+    if (token == null || token.isEmpty) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
     }
 
-    switch (_selectedFilter) {
-      case 'Amis':
-        return _notifications
-            .where((n) => n.type == NotificationType.friendNotification)
-            .toList();
-      case 'Équipes':
-        return _notifications
-            .where((n) => n.type == NotificationType.teamNotification)
-            .toList();
-      case 'Matchs':
-        return _notifications
-            .where((n) => n.type == NotificationType.matchNotification)
-            .toList();
-      default:
-        return _notifications;
+    final invitation1 = await teamInvitationService.respondToInvitation(
+        invitation, status, token);
+
+    if (invitation1 == null) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Erreur lors de la réponse à l\'invitation'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+      );
+      return;
+    }
+
+  }
+
+  Future<void> LoadNotification() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    final authState = ref.read(authProvider);
+    final token = authState.accessToken;
+    if (token == null || token.isEmpty) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    try {
+      final loadedNotificationData = await getNotificationOfUser(token);
+
+      setState(() {
+        _notifications = loadedNotificationData;
+        _filteredNotifications = _notifications;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Erreur lors du chargement des notifications: $e');
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
   int get _unreadCount {
-    return _notifications.where((n) => !n.isRead).length;
+    return 1;
+    //notifications.where((n) => !n.isRead).length;
   }
 
   @override
@@ -285,7 +273,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     );
   }
 
-  Widget _buildNotificationCard(NotificationItem notification) {
+  Widget _buildNotificationCard(NotificationModel notification) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       child: Card(
@@ -324,7 +312,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                           children: [
                             Expanded(
                               child: Text(
-                                notification.senderName,
+                                _getNotifiableName(notification),
                                 style: TextStyle(
                                   fontWeight: FontWeight.w600,
                                   fontSize: 15,
@@ -343,7 +331,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                _formatTimestamp(notification.timestamp),
+                                _formatTimestamp(notification.createdAt),
                                 style: TextStyle(
                                   color:
                                       _getNotificationColor(notification.type),
@@ -371,9 +359,12 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
                         // Actions si nécessaire
                         if (notification.type ==
-                                NotificationType.teamNotification &&
+                                NotificationType.invitationNotification &&
                             !notification.isRead)
                           _buildInvitationActions(notification),
+
+                        // Détails spécifiques selon le type de notification
+                        //_buildNotificationDetails(notification),
                       ],
                     ),
                   ),
@@ -404,7 +395,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     );
   }
 
-  Widget _buildNotificationAvatar(NotificationItem notification) {
+  Widget _buildNotificationAvatar(NotificationModel notification) {
     return Stack(
       children: [
         AnimatedContainer(
@@ -421,10 +412,10 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 width: 2,
               ),
             ),
-            child: notification.avatarUrl != null
+            child: _getNotificationImage(notification) != null
                 ? ClipOval(
                     child: Image.network(
-                      notification.avatarUrl!,
+                      _getNotificationImage(notification)!,
                       fit: BoxFit.cover,
                     ),
                   )
@@ -453,7 +444,55 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     );
   }
 
-  Widget _buildInvitationActions(NotificationItem notification) {
+  Widget _buildInvitationActions(NotificationModel notification) {
+    Invitation invitation = notification.notifiable as Invitation;
+    if (invitation.status != InvitationStatus.pending) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: invitation.status == InvitationStatus.accepted
+                ? Colors.green.withOpacity(0.1)
+                : Colors.red.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: invitation.status == InvitationStatus.accepted
+                  ? Colors.green
+                  : Colors.red,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                invitation.status == InvitationStatus.accepted
+                    ? Icons.check_circle
+                    : Icons.cancel,
+                color: invitation.status == InvitationStatus.accepted
+                    ? Colors.green
+                    : Colors.red,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                invitation.status == InvitationStatus.accepted
+                    ? 'Invitation acceptée'
+                    : 'Invitation refusée',
+                style: TextStyle(
+                  color: invitation.status == InvitationStatus.accepted
+                      ? Colors.green
+                      : Colors.red,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(top: 12),
       child: Row(
@@ -508,23 +547,19 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
   IconData _getNotificationIcon(NotificationType type) {
     switch (type) {
-      case NotificationType.friendNotification:
+      case NotificationType.invitationNotification:
+        //selon type d'invitation
+
         return Icons.person_add;
-      case NotificationType.teamNotification:
-        return Icons.group_add;
-      case NotificationType.matchNotification:
-        return Icons.sports_soccer;
     }
   }
 
   Color _getNotificationColor(NotificationType type) {
     switch (type) {
-      case NotificationType.friendNotification:
+      case NotificationType.invitationNotification:
+        //selon type d'invitation
+
         return const Color(0xFF3182CE);
-      case NotificationType.teamNotification:
-        return const Color(0xFF4299E1);
-      case NotificationType.matchNotification:
-        return const Color(0xFF48BB78);
     }
   }
 
@@ -545,55 +580,34 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     }
   }
 
-  void _handleNotificationTap(NotificationItem notification) {
+  void _handleNotificationTap(NotificationModel notification) {
     if (!notification.isRead) {
-      setState(() {
-        notification.isRead = true;
-      });
+      //maque is Read in backend True
     }
-
     // Navigation selon le type de notification
     switch (notification.type) {
-      case NotificationType.friendNotification:
+      case NotificationType.invitationNotification:
         // Naviguer vers les amis
-        break;
-      case NotificationType.teamNotification:
-        // Naviguer vers les équipes
-        break;
-      case NotificationType.matchNotification:
-        // Naviguer vers les matchs
+        // selon invitation type
         break;
     }
   }
 
-  void _acceptInvitation(NotificationItem notification) {
-    setState(() {
-      notification.isRead = true;
-    });
+  void _acceptInvitation(NotificationModel notification) {
+    Invitation invitation = notification.notifiable as Invitation;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Invitation acceptée !'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
+    RespondingInvitation(invitation, InvitationStatus.accepted);
+    setState(() {
+      LoadNotification();
+    });
   }
 
-  void _declineInvitation(NotificationItem notification) {
+  void _declineInvitation(NotificationModel notification) {
+    Invitation invitation = notification.notifiable as Invitation;
+    RespondingInvitation(invitation, InvitationStatus.rejected);
     setState(() {
-      notification.isRead = true;
+      LoadNotification();
     });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Invitation refusée'),
-        backgroundColor: Colors.orange,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      ),
-    );
   }
 
   Future<void> _refreshNotifications() async {
@@ -612,33 +626,43 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       );
     }
   }
-}
 
-// Modèles de données
-enum NotificationType {
-  friendNotification,
-  teamNotification,
-  matchNotification,
-}
+  // Méthodes utilitaires pour accéder aux attributs notifiable
+  String? _getNotificationImage(NotificationModel notification) {
+    if (notification.notifiable == null) return null;
 
-class NotificationItem {
-  final String id;
-  final NotificationType type;
-  final String title;
-  final String message;
-  final DateTime timestamp;
-  bool isRead;
-  final String? avatarUrl;
-  final String senderName;
+    switch (notification.type) {
+      case NotificationType.invitationNotification:
+        Invitation invitation = notification.notifiable as Invitation;
+        switch (invitation.type) {
+          case InvitationType.team:
+            return (invitation.invitable as TeamInvitable).fullImagePath;
 
-  NotificationItem({
-    required this.id,
-    required this.type,
-    required this.title,
-    required this.message,
-    required this.timestamp,
-    required this.isRead,
-    this.avatarUrl,
-    required this.senderName,
-  });
+          case InvitationType.friend:
+            break;
+
+          case InvitationType.match:
+            break;
+        }
+        break;
+    }
+    return null;
+  }
+
+  String _getNotifiableName(NotificationModel notification) {
+    if (notification.notifiable == null) {
+      return 'Inconnu';
+    }
+    Invitation invitation = notification.notifiable as Invitation;
+    switch (invitation.type) {
+      case InvitationType.team:
+        return (invitation.invitable as TeamInvitable).name;
+      case InvitationType.friend:
+        //return (invitation.invitable as UserInvitable).name;
+        return 'Ami';
+      case InvitationType.match:
+        //return (invitation.invitable as GameInvitable).name;
+        return 'Match';
+    }
+  }
 }
