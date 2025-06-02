@@ -696,7 +696,7 @@ class _MatchDetailsState extends State<MatchDetails>
     final profile_picture = player.user.profileImage;
     final username = player.user.name;
     final isCaptain = player.isCaptain;
-    final score = 4.5;
+    const score = 4.5;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),

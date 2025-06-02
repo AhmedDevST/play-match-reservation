@@ -4,10 +4,10 @@ import 'package:flutter_app/presentation/pages/Team/Create_Team.dart';
 import 'package:flutter_app/models/Sport.dart';
 import 'package:flutter_app/models/UserTeamLink.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
-import 'package:flutter_app/providers/team_provider.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/core/config/routes.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:flutter_app/core/services/Team/UserTeamService.dart';
 
 class UserTeamDash extends ConsumerStatefulWidget {
   const UserTeamDash({super.key});
@@ -22,6 +22,8 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
   late Animation<double> _fadeAnimation;
   bool _isLoading = true;
   String? _error;
+  final UserTeamService _userTeamService = UserTeamService();
+  List<UserTeamLink> _userTeamLinks = [];
 
   @override
   void initState() {
@@ -43,10 +45,25 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
 
   Future<void> _loadTeams() async {
     try {
-      // En mode test : toujours utiliser l'utilisateur 1
-        final authState = ref.read(authProvider);
-        final token = authState.accessToken;
-      await ref.read(teamsProvider.notifier).loadTeams(token!);
+      final authState = ref.read(authProvider);
+      final token = authState.accessToken;
+
+      if (token == null) {
+        throw Exception('Token d\'authentification requis');
+      }
+
+      // Charger l'historique complet des équipes depuis l'API
+      print('Calling getUserTeamHistory...');
+      final historyResponse = await _userTeamService.getUserTeamHistory(token);
+      print('Response received: $historyResponse');
+
+      final teamHistoryList = historyResponse['team_history'] as List;
+      print('Team history list length: ${teamHistoryList.length}');
+
+      // Convertir la réponse en UserTeamLink
+      print('Converting history to UserTeamLinks...');
+      _userTeamLinks = _convertHistoryToUserTeamLinks(teamHistoryList);
+      print('Converted ${_userTeamLinks.length} UserTeamLinks');
 
       if (mounted) {
         setState(() {
@@ -56,8 +73,8 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
         _animationController.forward();
       }
     } catch (e, stackTrace) {
-      print('Error in _loadTeams: $e'); // Pour déboguer
-      print('Stack trace: $stackTrace'); // Pour déboguer
+      print('Error in _loadTeams: $e');
+      print('Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _error = e.toString();
@@ -65,6 +82,25 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
         });
       }
     }
+  }
+
+  List<UserTeamLink> _convertHistoryToUserTeamLinks(List teamHistoryList) {
+    List<UserTeamLink> result = [];
+
+    for (int i = 0; i < teamHistoryList.length; i++) {
+      try {
+        print('Converting item $i: ${teamHistoryList[i]}');
+        final userTeamLink = UserTeamLink.fromJson(teamHistoryList[i]);
+        result.add(userTeamLink);
+        print('Successfully converted item $i');
+      } catch (e) {
+        print('Error converting item $i: $e');
+        print('Item data: ${teamHistoryList[i]}');
+        // Continue avec les autres éléments au lieu de planter complètement
+      }
+    }
+
+    return result;
   }
 
   @override
@@ -92,8 +128,6 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
 
   @override
   Widget build(BuildContext context) {
-    final teams = ref.watch(teamsProvider);
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -131,7 +165,7 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
           ),
         ],
       ),
-      body: _buildBody(teams),
+      body: _buildBody(_userTeamLinks), // Utiliser les données locales
     );
   }
 
@@ -189,12 +223,12 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
       );
     }
 
+    // Utiliser les données chargées depuis l'API
     // Séparer les équipes en deux listes et les trier par date de début
-    // Créer un Set pour garder une trace des IDs d'équipe déjà vus
     final seenTeamIds = <int>{};
 
     final currentTeams =
-        userTeamLinks.where((link) => !link.hasLeftTeam).where((link) {
+        _userTeamLinks.where((link) => !link.hasLeftTeam).where((link) {
       // Ne garder que la première occurrence de chaque équipe
       if (seenTeamIds.contains(link.team.id)) return false;
       seenTeamIds.add(link.team.id);
@@ -204,13 +238,15 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
 
     seenTeamIds.clear(); // Réinitialiser pour l'historique
 
-    final historicalTeams =
-        userTeamLinks.where((link) => link.hasLeftTeam).where((link) {
+    final historicalTeams = _userTeamLinks
+        .where((link) => link.hasLeftTeam)
+        .where((link) {
       if (seenTeamIds.contains(link.team.id)) return false;
       seenTeamIds.add(link.team.id);
       return true;
     }).toList()
-          ..sort((a, b) => b.startDate.compareTo(a.startDate));
+      ..sort((a, b) =>
+          (b.endDate ?? b.startDate).compareTo(a.endDate ?? a.startDate));
 
     return RefreshIndicator(
       onRefresh: _loadTeams,
@@ -225,17 +261,19 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
               ),
               padding: const EdgeInsets.all(20),
               children: [
-                _buildSectionTitle('Équipes Récentes'),
+                _buildSectionTitle('Équipes Actuelles'),
                 if (currentTeams.isEmpty)
-                  _buildEmptyState('Vous ne faites partie d\'aucune équipe')
+                  _buildEmptyState(
+                      'Vous ne faites partie d\'aucune équipe active')
                 else
                   ...currentTeams.map((link) => _buildTeamCard(link)),
                 const SizedBox(height: 32),
-                _buildSectionTitle('Historique'),
+                _buildSectionTitle('Équipes Dissoutes'),
                 if (historicalTeams.isEmpty)
-                  _buildEmptyState('Aucune équipe dans l\'historique')
+                  _buildEmptyState('Aucune équipe dissoute dans l\'historique')
                 else
-                  ...historicalTeams.map((link) => _buildTeamCard(link)),
+                  ...historicalTeams
+                      .map((link) => _buildTeamCard(link, isHistorical: true)),
               ],
             ),
           );
@@ -272,7 +310,7 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
     );
   }
 
-  Widget _buildTeamCard(UserTeamLink teamLink) {
+  Widget _buildTeamCard(UserTeamLink teamLink, {bool isHistorical = false}) {
     final team = teamLink.team;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -286,17 +324,29 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
             spreadRadius: 2,
           ),
         ],
+        // Ajouter un border pour les équipes dissoutes
+        border: isHistorical
+            ? Border.all(
+                color: Colors.red.withOpacity(0.3),
+                width: 1,
+              )
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => TeamDetails(teamId: team.id),
               ),
             );
+
+            // Si l'équipe a été dissoute (result == true), recharger les données
+            if (result == true) {
+              await _loadTeams();
+            }
           },
           borderRadius: BorderRadius.circular(15),
           child: Padding(
@@ -316,17 +366,40 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade800,
+                                color: isHistorical
+                                    ? Colors.grey.shade600
+                                    : Colors.grey.shade800,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           if (teamLink.isCaptain) ...[
                             const SizedBox(width: 8),
-                            const Icon(
+                            Icon(
                               Icons.star,
-                              color: Colors.amber,
+                              color: isHistorical ? Colors.grey : Colors.amber,
                               size: 20,
+                            ),
+                          ],
+                          if (isHistorical) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'DISSOUTE',
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ],
@@ -338,13 +411,16 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF2EE59D).withOpacity(0.1),
+                        color: const Color(0xFF2EE59D)
+                            .withOpacity(isHistorical ? 0.05 : 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         'Score: ${team.totalScore}',
-                        style: const TextStyle(
-                          color: Color(0xFF2EE59D),
+                        style: TextStyle(
+                          color: isHistorical
+                              ? Colors.grey
+                              : const Color(0xFF2EE59D),
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
@@ -360,12 +436,15 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E88E5).withOpacity(0.1),
+                          color: const Color(0xFF1E88E5)
+                              .withOpacity(isHistorical ? 0.05 : 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
                           _getSportIcon(team.sport),
-                          color: const Color(0xFF1E88E5),
+                          color: isHistorical
+                              ? Colors.grey
+                              : const Color(0xFF1E88E5),
                           size: 20,
                         ),
                       ),
@@ -381,12 +460,15 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E88E5).withOpacity(0.1),
+                          color: const Color(0xFF1E88E5)
+                              .withOpacity(isHistorical ? 0.05 : 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.star,
-                          color: Color(0xFF1E88E5),
+                          color: isHistorical
+                              ? Colors.grey
+                              : const Color(0xFF1E88E5),
                           size: 20,
                         ),
                       ),
@@ -398,6 +480,30 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                           fontSize: 14,
                         ),
                       ),
+                      if (isHistorical && teamLink.endDate != null) ...[
+                        const SizedBox(width: 16),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.event_busy,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Dissoute le: ${teamLink.endDate?.day}/${teamLink.endDate?.month}/${teamLink.endDate?.year}',
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -405,18 +511,24 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                   const SizedBox(height: 16),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-                    child: Image.network(
-                      team.fullImagePath,
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          height: 150,
-                          color: Colors.grey.shade200,
-                          child: const Icon(Icons.error_outline),
-                        );
-                      },
+                    child: ColorFiltered(
+                      colorFilter: isHistorical
+                          ? ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                          : const ColorFilter.mode(
+                              Colors.transparent, BlendMode.multiply),
+                      child: Image.network(
+                        team.fullImagePath,
+                        height: 150,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 150,
+                            color: Colors.grey.shade200,
+                            child: const Icon(Icons.error_outline),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],

@@ -11,5 +11,6 @@ class Routes {
   static const String booking = '/booking';
   static const String myBooking = '/my-booking';
   static const String matchDetails = '/match-details';
+  static const String notifications = '/notifications';
   
 }

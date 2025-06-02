@@ -7,6 +7,7 @@ use App\Http\Controllers\TimeSlotInstanceController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserTeamController;
+use App\Http\Controllers\UserTeamDetailsController;
 use App\Http\Controllers\Invitations\TeamInvitationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -61,9 +62,18 @@ Route::get('/teams/my-teams', [TeamController::class, 'myTeams'])->middleware('a
 // Route pour récupérer les membres d'une équipe
 Route::get('/teams/{teamId}/members', [UserTeamController::class, 'getTeamMembers'])->middleware('auth:sanctum');
 
+//Route pour disband une équipe
+Route::post('/teams/{teamId}/disband', [UserTeamController::class, 'disbandTeam'])->middleware('auth:sanctum');
 
-// Route de test pour l'utilisateur 1
-Route::get('/teams/test-my-teams', [TeamController::class, 'testMyTeams']);
+//Route pour récupérer l'historique des équipes
+Route::get('/teams/history', [UserTeamController::class, 'getUserTeamHistory'])->middleware('auth:sanctum');
+
+//Route pour récupérer tous les membres d'une équipe (y compris équipes dissoutes)
+Route::get('/teams/{teamId}/all-members', [UserTeamController::class, 'getAllTeamMembers'])->middleware('auth:sanctum');
+
+//Route pour nettoyer les invitations orphelines
+Route::post('/teams/cleanup-invitations', [UserTeamController::class, 'cleanupOrphanedInvitations'])->middleware('auth:sanctum');
+
 // Login user
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -91,6 +101,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Team Invitations
     Route::get('/teams/{team}/available-users', [TeamInvitationController::class, 'getUsersNotInTeamOrInvited']);
+    
+    // User Team Details - Détails d'un utilisateur dans une équipe
+    Route::get('/teams/{team}/users/{user}/details', [UserTeamDetailsController::class, 'getUserTeamDetails']);
 
     // Route pour récupérer les informations de l'utilisateur connecté
     Route::get('/user/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');

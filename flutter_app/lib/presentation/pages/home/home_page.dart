@@ -915,6 +915,76 @@ class _HomePageState extends ConsumerState<HomePage>
 
   // Barre de navigation inférieure
   Widget _buildBottomNavBar() {
+    final List<Map<String, dynamic>> items = [
+      {'icon': Icons.home, 'label': 'Accueil'},
+      {'icon': Icons.people, 'label': 'Amis'},
+      {'icon': Icons.notifications, 'label': 'Notifications'},
+      {'icon': Icons.calendar_today, 'label': 'Réservations'},
+      {'icon': Icons.logout, 'label': 'Déconnexion'},
+    ];
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(items.length, (index) {
+          return InkWell(
+            onTap: () {
+              if (index == 4) {
+                // Si c'est le bouton de déconnexion
+                // Naviguer vers la page initiale (LandingPage)
+                ref.read(authProvider.notifier).logout();
+
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/', (route) => false);
+              } else if (index == 1) {
+                // Si c'est le bouton des amis
+                // Naviguer vers la page des amis
+                Navigator.of(context).pushNamed('/friends');
+              } else {
+                setState(() {
+                  _selectedIndex = index;
+                });
+              }
+            },
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  items[index]['icon'],
+                  color: _selectedIndex == index
+                      ? const Color(0xFF1E88E5)
+                      : Colors.grey.shade400,
+                  size: 22,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  items[index]['label'],
+                  style: TextStyle(
+                    color: _selectedIndex == index
+                        ? const Color(0xFF1E88E5)
+                        : Colors.grey.shade400,
+                    fontSize: 11,
+                    fontWeight: _selectedIndex == index
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
     return BottomNavBar(
       selectedIndex: _selectedIndex,
       onItemSelected: (index) {

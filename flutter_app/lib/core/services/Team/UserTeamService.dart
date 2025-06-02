@@ -28,7 +28,6 @@ class CreateTeamRequest {
 
 class UserTeamService {
   Future<Team> createTeam(CreateTeamRequest request, String token) async {
-
     final response = await http.post(
       Uri.parse(USER_TEAM_URL),
       headers: {
@@ -62,6 +61,81 @@ class UserTeamService {
 
     print('Error response: ${response.body}'); // Debug log
     throw Exception('Failed to create team: ${response.statusCode}');
+  }
+
+  // Disbander une équipe
+  Future<void> disbandTeam(int teamId, String token) async {
+    final response = await http.post(
+      Uri.parse('$API_URL/api/teams/$teamId/disband'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      print('Team disbanded successfully'); // Debug log
+    } else {
+      print('Error response: ${response.body}'); // Debug log
+      throw Exception('Failed to disband team: ${response.statusCode}');
+    }
+  }
+
+  // Récupérer l'historique des équipes d'un utilisateur
+  Future<Map<String, dynamic>> getUserTeamHistory(String token) async {
+    final response = await http.get(
+      Uri.parse('$API_URL/api/teams/history'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      print("hello from the debugger"); // Debug log
+      throw Exception('Failed to load team history: ${response.statusCode}');
+    }
+  }
+
+  // Nettoyer les invitations orphelines
+  Future<void> cleanupOrphanedInvitations(String token) async {
+    final response = await http.post(
+      Uri.parse('$API_URL/api/teams/cleanup-invitations'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 204) {
+      print('Orphaned invitations cleaned up successfully'); // Debug log
+    } else {
+      print('Error response: ${response.body}'); // Debug log
+      throw Exception(
+          'Failed to cleanup orphaned invitations: ${response.statusCode}');
+    }
+  }
+
+  // Récupérer tous les membres d'une équipe (y compris équipes dissoutes)
+  Future<Map<String, dynamic>> getAllTeamMembers(
+      int teamId, String token) async {
+    final response = await http.get(
+      Uri.parse('$API_URL/api/teams/$teamId/all-members'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      print('Team members fetched successfully'); // Debug log
+      return jsonDecode(response.body);
+    } else {
+      print('Error response: ${response.body}'); // Debug log
+      throw Exception('Failed to fetch team members: ${response.statusCode}');
+    }
   }
 
   Future<List<Sport>> getSports() async {

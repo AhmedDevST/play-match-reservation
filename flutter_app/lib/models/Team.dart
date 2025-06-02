@@ -1,8 +1,6 @@
 import 'package:flutter_app/models/Sport.dart';
 import 'package:flutter_app/core/config/apiConfig.dart';
-import 'package:flutter_app/models/Sport.dart';
 import 'package:flutter_app/models/TeamPlayer.dart';
-import 'package:flutter_app/models/user.dart';
 
 class Team {
   final int id;

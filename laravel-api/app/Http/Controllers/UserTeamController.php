@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\UserTeamLink;
+use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -72,13 +73,13 @@ class UserTeamController extends Controller
             'is_captain' => true,
         ]);
 
+
         return response()->json([
             'message' => 'Team created successfully',
             'team' => $team->load(['userTeamLinks.user', 'sport'])
         ], 201);
     }
 
-    
 
     /**
      * Enregistrer une image à partir d'une chaîne Base64
@@ -130,5 +131,126 @@ class UserTeamController extends Controller
             'team_members' => $teamMembers
         ]);
     }
+
+
+    /**
+     * Méthode pour faire le disband d'une équipe
+     */
+    public function disbandTeam($teamId)
+    {
+        $team = Team::findOrFail($teamId);
+
+        // Vérifier si l'utilisateur connecté est le capitaine de l'équipe
+        $userTeamLink = $team->userTeamLinks()
+            ->where('user_id', Auth::id())
+            ->where('is_captain', true)
+            ->where('has_left_team', false)
+            ->first();
+
+        if (!$userTeamLink) {
+            return response()->json([
+                'message' => 'Vous devez être le capitaine de cette équipe pour la dissoudre'
+            ], 403);
+        }
+
+        // Marquer tous les membres comme ayant quitté l'équipe
+        $team->userTeamLinks()->update([
+            'has_left_team' => true, 
+            'leave_reason' => 'Team disbanded',
+            'end_date' => now()
+        ]);
+
+        // Debug: Vérifier les invitations avant suppression
+        $invitationsToDelete = Invitation::where('invitable_type', Team::class)
+                  ->where('invitable_id', $team->id)
+                  ->get();
+        
+        \Log::info("Found {$invitationsToDelete->count()} invitations to delete for team {$team->id}");
+        
+        // Supprimer toutes les invitations liées à cette équipe
+        $deletedInvitations = Invitation::where('invitable_type', Team::class)
+                  ->where('invitable_id', $team->id)
+                  ->delete();
+        
+        \Log::info("Disbanded team {$team->id}: Deleted {$deletedInvitations} invitations");
+
+        // NE PAS supprimer l'équipe pour qu'elle reste dans l'historique
+        // L'équipe est maintenant "inactive" car tous les membres l'ont quittée
+
+        return response()->json([
+            'message' => 'L\'équipe a été dissoute avec succès'
+        ]);
+    }
+
+
+    /**
+     * Méthode pour getter les historique des teams d'un utilisateur
+     */
+    public function getUserTeamHistory()
+    {
+        $userId = Auth::id();
+
+        // Récupérer TOUTES les équipes de l'utilisateur (actuelles et passées)
+        $teams = UserTeamLink::where('user_id', $userId)
+            ->with(['team.sport', 'user'])
+            ->get();
+
+        // Retourner les données complètes des UserTeamLink avec leurs équipes
+        return response()->json([
+            'team_history' => $teams
+        ]);
+    }
+
+    /**
+     * Récupérer tous les membres d'une équipe (y compris les équipes dissoutes)
+     */
+    public function getAllTeamMembers($teamId)
+    {
+        // Vérifier que l'équipe existe
+        $team = Team::find($teamId);
+        if (!$team) {
+            return response()->json([
+                'message' => 'Équipe introuvable'
+            ], 404);
+        }
+
+        // Vérifier que l'utilisateur actuel fait ou faisait partie de cette équipe
+        $userTeamLink = UserTeamLink::where('user_id', Auth::id())
+            ->where('team_id', $teamId)
+            ->first();
+
+        if (!$userTeamLink) {
+            return response()->json([
+                'message' => 'Vous n\'avez pas accès à cette équipe'
+            ], 403);
+        }
+
+        // Récupérer TOUS les membres de l'équipe (actuels et anciens)
+        $teamMembers = UserTeamLink::where('team_id', $teamId)
+            ->with(['user', 'team.sport'])
+            ->get();
+
+        return response()->json([
+            'team_members' => $teamMembers
+        ]);
+    }
+
+    /**
+     * Nettoyer les invitations orphelines (équipes qui n'existent plus)
+     */
+    public function cleanupOrphanedInvitations()
+    {
+        // Supprimer les invitations pour des équipes qui n'existent plus
+        $orphanedInvitations = Invitation::where('invitable_type', Team::class)
+            ->whereNotIn('invitable_id', Team::pluck('id'))
+            ->delete();
+        
+        \Log::info("Cleaned up {$orphanedInvitations} orphaned team invitations");
+        
+        return response()->json([
+            'message' => "Nettoyage terminé: {$orphanedInvitations} invitations orphelines supprimées"
+        ]);
+    }
+
 }
 

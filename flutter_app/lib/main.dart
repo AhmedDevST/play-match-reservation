@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/presentation/pages/Notification/Notifications.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
 import 'package:flutter_app/presentation/pages/profile/profile_page.dart';
 import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';
@@ -54,11 +55,12 @@ class MyApp extends StatelessWidget {
               case Routes.teamDetails:
                 final teamId = settings.arguments as int;
                 return TeamDetails(teamId: teamId);
+              case Routes.profile:
+                return const ProfilePage();
+              case Routes.notifications:
+                return const NotificationsPage();
               case Routes.home:
                 return const HomePage();
-              case Routes.profile:
-                // Assuming you have a ProfilePage
-                return const ProfilePage();
               default:
                 return const UserTeamDash();
             }
