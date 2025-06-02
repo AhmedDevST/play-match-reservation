@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/core/services/User/UserService.dart';
+import 'package:flutter_app/presentation/pages/home/home_page.dart';
 import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
 import 'package:flutter_app/presentation/pages/reservation/booking_details.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_network/image_network.dart';
 
-class MyBooking extends StatefulWidget {
+class MyBooking extends ConsumerStatefulWidget {
   const MyBooking({Key? key}) : super(key: key);
 
   @override
-  State<MyBooking> createState() => _MyBookingState();
+  ConsumerState<MyBooking> createState() => _MyBookingState();
 }
 
-class _MyBookingState extends State<MyBooking> {
+class _MyBookingState extends ConsumerState<MyBooking> {
   ReservationStatus selectedStatus = ReservationStatus.completed;
   late List<Reservation> reservations = [];
   late List<Reservation> filteredReservations = [];
@@ -24,14 +27,26 @@ class _MyBookingState extends State<MyBooking> {
   }
 
   Future<void> LoadReservation() async {
-    isLoading = true;
-    int userId = 1;
-    final loadedReservationData = await getReservationOfUser(userId);
     setState(() {
-      isLoading = false;
-      reservations = loadedReservationData;
-      filterReservations();
+      isLoading = true;
     });
+    final authState = ref.read(authProvider);
+    final token = authState.accessToken;
+    if (token != null) {
+      final loadedReservationData = await getReservationOfUser(token);
+      setState(() {
+        isLoading = false;
+        reservations = loadedReservationData;
+        filterReservations();
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      // You can show a message or redirect to login
+      print("User is not logged in.");
+      // }
+    }
   }
 
   void filterReservations() {
@@ -42,50 +57,52 @@ class _MyBookingState extends State<MyBooking> {
     });
   }
 
- @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    backgroundColor: Colors.white,
-    appBar: AppBar(
-      title: const Text(style: TextStyle(color: Colors.white), 'My booking'),
-      elevation: 0,
-      backgroundColor: Theme.of(context).primaryColor,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white),
-        onPressed: () => Navigator.of(context).pop(),
-      ),
-      centerTitle: false,
-    ),
-    body: isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
-            children: [
-              const SizedBox(height: 20),
-              _buildFilterButtons(),
-              const SizedBox(height: 20),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: LoadReservation,
-                  child: _buildContent(),
-                ),
-              ),
-            ],
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(style: TextStyle(color: Colors.white), 'My booking'),
+        elevation: 0,
+        backgroundColor: Theme.of(context).primaryColor,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
           ),
-
-    floatingActionButton: FloatingActionButton.extended(
-      onPressed: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => SelectFacilitySport()),
-        );
-      },
-      backgroundColor: Theme.of(context).primaryColor,
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.add),
-      label: const Text('Add Booking'),
-    ),
-    floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-  );
-}
+        ),
+        centerTitle: false,
+      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                const SizedBox(height: 20),
+                _buildFilterButtons(),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: LoadReservation,
+                    child: _buildContent(),
+                  ),
+                ),
+              ],
+            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => SelectFacilitySport()),
+          );
+        },
+        backgroundColor: Theme.of(context).primaryColor,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Add Booking'),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
 
   Widget _buildFilterButtons() {
     return Container(

@@ -34,15 +34,22 @@ class TimeSlotInstanceController extends Controller
         ]);
     }
 
-    public function getTimeSlotsInstances($facility,$date)
+    public function getTimeSlotsInstances($facility, $date)
     {
+        $now = now();
         $recurringTimeSlots = $facility->recurringTimeSlots()
-        ->with(['timeSlotInstances' => function ($query) use ($date) {
-            $query->where('date', $date)
-                //  ->where('status', TimeSlotsStatus::AVAILABLE->value)
-                  ->with('timeZone');
-        }])
-        ->get();
+            ->with(['timeSlotInstances' => function ($query) use ($date, $now) {
+                $query->where('date', $date)
+                    // ->where('status', TimeSlotsStatus::AVAILABLE->value)
+                    ->with('timeZone')
+                    ->where(function ($q) use ($now, $date) {
+                        // Only filter by start_time if the date is today
+                        if ($date === $now->format('Y-m-d')) {
+                            $q->where('start_time', '>', $now->format('H:i:s'));
+                        }
+                    });
+            }])
+            ->get();
         $timeSlotInstances = $recurringTimeSlots->flatMap(function ($recurringSlot) {
             return $recurringSlot->timeSlotInstances;
         });

@@ -30,10 +30,17 @@ class GameResponse {
   }
 }
 
-Future<List<Team>> initGame(int facilityId) async {
+Future<List<Team>> initGame(int facilityId, token) async {
   print("Calling Fetch  ");
   final url = Uri.parse("$GAME_FACILITY_URL/$facilityId/init-game");
-  final response = await http.get(url);
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    },
+  );
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     return (data['user_teams'] as List)
@@ -42,6 +49,7 @@ Future<List<Team>> initGame(int facilityId) async {
   }
   throw Exception("Failed to fetch");
 }
+
 Future<GameResponse> fetchGame(int id) async {
   print("Calling Fetch Game");
   final url = Uri.parse("$GAME_URL/$id");
@@ -59,5 +67,3 @@ void main() async {
   print(game.timeSlot.startTime);
   print(game.facility.name);
 }
-
-

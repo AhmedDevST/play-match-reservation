@@ -190,7 +190,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                             borderRadius: BorderRadius.circular(40),                            child: Image.network(
                               userData.fullImagePath != null 
                                 ? 'http://localhost:9000/storage/${userData.fullImagePath}'
-                                : 'http://localhost:9000/storage/user_images/default.jpeg',
+                                : 'http://localhost:9000/storage/user_images/default.jpg',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(

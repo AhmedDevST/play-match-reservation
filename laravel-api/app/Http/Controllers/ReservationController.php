@@ -20,14 +20,22 @@ use App\Models\Team;
 use App\Models\TeamMatch;
 use App\Models\TimeSlotInstance;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Enum;
 
 class ReservationController extends Controller
 {
-    public function getUserReservations($userId)
+    public function getUserReservations()
     {
+        $userId = Auth::user()->id ?? null;
+        if (!$userId) {
+            return response()->json([
+                'message' => 'User not authenticated.',
+                'success' => false,
+            ], 401);
+        }
         $reservations = Reservation::with([
             'TimeSlotInstance.recurringTimeSlot.sportFacility',
             'user',
@@ -63,6 +71,14 @@ class ReservationController extends Controller
 
     public function store(Request $request)
     {
+        // Step 1: Check if the user is authenticated
+         $userId = Auth::user()->id ?? null;
+        if (!$userId) {
+            return response()->json([
+                'message' => 'User not authenticated.',
+                'success' => false,
+            ], 401);
+        }
         if (!$request->has('is_match')) {
             return response()->json([
                 'message' => 'is_match parameter is required.',
@@ -76,7 +92,6 @@ class ReservationController extends Controller
                     'required',
                     Rule::exists('time_slot_instances', 'id')->where('status', 'available'),
                 ],
-                'user_id' => 'required|exists:users,id',
             ]);
 
             if ($validator->fails()) {
@@ -93,7 +108,7 @@ class ReservationController extends Controller
 
                 $reservation = Reservation::create([
                     'time_slot_instance_id' => $validated['time_slot_id'],
-                    'user_id' => $validated['user_id'],
+                    'user_id' => $userId,
                     'date' => now(),
                     'total_price' => 0,
                     'status' => ReservationStatus::COMPLETED,
@@ -128,7 +143,6 @@ class ReservationController extends Controller
                     'required',
                     Rule::exists('time_slot_instances', 'id')->where('status', 'available'),
                 ],
-                'user_id' => 'required|exists:users,id',
                 'auto_confirm' => 'boolean',
                 'match_type' => ['required', new Enum(MatchType::class)],
                 'team1_id' => 'required|exists:teams,id',
@@ -228,7 +242,7 @@ class ReservationController extends Controller
 
                 $reservation = Reservation::create([
                     'time_slot_instance_id' => $validated['time_slot_id'],
-                    'user_id' => $validated['user_id'],
+                    'user_id' => $userId,
                     'date' => now(),
                     'match_id' => $match->id,
                     'auto_confirm' => $validated['auto_confirm'] ?? false,
