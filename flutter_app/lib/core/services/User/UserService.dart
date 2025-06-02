@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:flutter_app/models/Reservation.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_app/models/User.dart';
 import 'package:flutter_app/core/config/apiConfig.dart';
@@ -59,10 +61,16 @@ class UserService {
   
 }
 
-Future<List<Reservation>> getReservationOfUser(int user_id) async {
+Future<List<Reservation>> getReservationOfUser(token) async {
   print("Calling Fetch Reservation of User");
-  final url = Uri.parse("$USER_URL/$user_id/reservations");
-  final response = await http.get(url);
+  final url = Uri.parse("$USER_URL/reservations");
+  final response = await http.get(url,
+   headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+  );
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
     return (data['reservations'] as List)

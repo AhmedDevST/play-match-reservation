@@ -3,25 +3,16 @@ import 'package:flutter_app/core/services/response/ApiResponse.dart';
 import 'package:flutter_app/models/Game.dart';
 import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';
-import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
 import 'package:flutter_app/presentation/widgets/dialog/StatusDialog.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:image_network/image_network.dart';
 import 'package:flutter_app/presentation/widgets/dialog/ConfirmationDialog.dart';
 import 'package:flutter_app/presentation/widgets/buttons/PrimaryButton.dart';
 import 'package:flutter_app/core/services/reservation/reservation_service.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_app/models/Game.dart';
-import 'package:flutter_app/models/Reservation.dart';
-import 'package:flutter_app/presentation/widgets/dialog/StatusDialog.dart';
-import 'package:intl/intl.dart';
-import 'package:image_network/image_network.dart';
-import 'package:flutter_app/presentation/widgets/dialog/ConfirmationDialog.dart';
-import 'package:flutter_app/presentation/widgets/buttons/PrimaryButton.dart';
-import 'package:flutter_app/core/services/reservation/reservation_service.dart';
-
-class BookingSummaryScreen extends StatelessWidget {
+class BookingSummaryScreen extends ConsumerStatefulWidget {
   final Reservation reservation;
 
   const BookingSummaryScreen({
@@ -29,6 +20,12 @@ class BookingSummaryScreen extends StatelessWidget {
     required this.reservation,
   }) : super(key: key);
 
+  @override
+  ConsumerState<BookingSummaryScreen> createState() =>
+      _BookingSummaryScreenState();
+}
+
+class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
   void _confirmBooking(BuildContext context) async {
     bool? confirmed = await showDialog<bool>(
       context: context,
@@ -41,8 +38,8 @@ class BookingSummaryScreen extends StatelessWidget {
         cancelText: 'Cancel',
       ),
     );
+
     if (confirmed == true) {
-      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -50,31 +47,36 @@ class BookingSummaryScreen extends StatelessWidget {
           child: CircularProgressIndicator(),
         ),
       );
-      ApiResponse result = await saveReservation(reservation);
-      bool success = result.success;
 
-      Navigator.of(context).pop();
-      // Close the loading dialog
+      final authState = ref.read(authProvider);
+      final token = authState.accessToken;
 
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => StatusDialog(
-          title: success ? 'Success!' : 'Error',
-          description: result.message,
-          lottieUrl: success
-              ? 'https://lottie.host/52e62b1f-8797-41b9-9dca-9125f4912f36/teoKcK9fNs.json'
-              : 'https://lottie.host/c6a222b2-e446-4f5b-b67c-29f5fa692e86/XaOTwLmn2R.json',
-          isSuccess: success,
-          errors: result.errors,
-        ),
-      );
-      if (success) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => MyBooking()),
-          (route) => false,
+      if (token != null) {
+        ApiResponse result = await saveReservation(widget.reservation, token);
+        bool success = result.success;
+        Navigator.of(context).pop(); // Close loading dialog
+
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => StatusDialog(
+            title: success ? 'Success!' : 'Error',
+            description: result.message,
+            lottieUrl: success
+                ? 'https://lottie.host/52e62b1f-8797-41b9-9dca-9125f4912f36/teoKcK9fNs.json'
+                : 'https://lottie.host/c6a222b2-e446-4f5b-b67c-29f5fa692e86/XaOTwLmn2R.json',
+            isSuccess: success,
+            errors: result.errors,
+          ),
         );
+
+        if (success) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => MyBooking()),
+            (route) => false,
+          );
+        }
       }
     }
   }
@@ -165,7 +167,7 @@ class BookingSummaryScreen extends StatelessWidget {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: ImageNetwork(
-                        image: reservation.facility.fullImagePath,
+                        image: widget.reservation.facility.fullImagePath,
                         height: 110,
                         width: 110,
                         fitWeb: BoxFitWeb.cover,
@@ -184,7 +186,7 @@ class BookingSummaryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        reservation.facility.name,
+                        widget.reservation.facility.name,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -192,7 +194,7 @@ class BookingSummaryScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        reservation.facility.address,
+                        widget.reservation.facility.address,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
@@ -253,9 +255,9 @@ class BookingSummaryScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        reservation.timeSlot?.date != null
+                        widget.reservation.timeSlot?.date != null
                             ? DateFormat('EEEE d MMMM y')
-                                .format(reservation.timeSlot!.date)
+                                .format(widget.reservation.timeSlot!.date)
                             : 'Date not specified',
                         style: const TextStyle(
                           fontSize: 16,
@@ -285,8 +287,8 @@ class BookingSummaryScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        reservation.timeSlot != null
-                            ? '${reservation.timeSlot!.startTime} - ${reservation.timeSlot!.endTime}'
+                        widget.reservation.timeSlot != null
+                            ? '${widget.reservation.timeSlot!.startTime} - ${widget.reservation.timeSlot!.endTime}'
                             : 'Time not specified',
                         style: const TextStyle(
                           fontSize: 16,
@@ -307,7 +309,7 @@ class BookingSummaryScreen extends StatelessWidget {
                 border: Border.all(color: Colors.green[200]!),
               ),
               child: Text(
-                reservation.timeSlot?.timeZone.name ??
+                widget.reservation.timeSlot?.timeZone.name ??
                     'Time Zone not specified',
                 style: TextStyle(
                   fontSize: 12,
@@ -350,11 +352,11 @@ class BookingSummaryScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            if (reservation.game != null &&
-                reservation.game!.type == GameType.private)
+            if (widget.reservation.game != null &&
+                widget.reservation.game!.type == GameType.private)
               _buildPrivateMatchDetails()
-            else if (reservation.game != null &&
-                reservation.game!.type == GameType.public)
+            else if (widget.reservation.game != null &&
+                widget.reservation.game!.type == GameType.public)
               _buildPublicMatchDetails()
             else
               _buildNoGameDetails(),
@@ -365,7 +367,7 @@ class BookingSummaryScreen extends StatelessWidget {
   }
 
   Widget _buildPrivateMatchDetails() {
-    final game = reservation.game;
+    final game = widget.reservation.game;
     final opponent = game?.opponentTeam;
     final team1 = game?.team1;
     final sportName = team1!.sport.name ?? 'Unknown Sport';
@@ -459,7 +461,7 @@ class BookingSummaryScreen extends StatelessWidget {
   }
 
   Widget _buildPublicMatchDetails() {
-    final game = reservation.game;
+    final game = widget.reservation.game;
     final sportName = game?.team1.sport.name ?? 'Sport';
 
     return Column(

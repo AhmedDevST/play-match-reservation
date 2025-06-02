@@ -40,7 +40,7 @@ Future<ReservationResponse> fetchInitReservation() async {
   throw Exception("Failed to fetch sport facilities");
 }
 
-Future<ApiResponse> saveReservation(Reservation reservation) async {
+Future<ApiResponse> saveReservation(Reservation reservation, token) async {
   try {
     print(reservation.game != null
         ? "Saving reservation with game: ${reservation.game?.matchTypeAsString}"
@@ -51,10 +51,10 @@ Future<ApiResponse> saveReservation(Reservation reservation) async {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'time_slot_id': reservation.timeSlot?.id,
-        'user_id': 1,
         'is_match': reservation.game != null ? true : false,
         'match_type': reservation.game?.matchTypeAsString,
         'auto_confirm': reservation.autoConfirm,
@@ -72,6 +72,3 @@ Future<ApiResponse> saveReservation(Reservation reservation) async {
     );
   }
 }
-
-
-

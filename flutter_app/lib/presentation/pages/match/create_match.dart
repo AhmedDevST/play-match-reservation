@@ -7,18 +7,23 @@ import 'package:flutter_app/models/Team.dart';
 import 'package:easy_debounce/easy_debounce.dart';
 import 'package:flutter_app/presentation/pages/reservation/BookingSummary.dart';
 import 'package:flutter_app/presentation/widgets/buttons/PrimaryButton.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 //import 'package:flutter_app/presentation/pages/match/match_details_page.dart';
 
-class CreateMatch extends StatefulWidget {
+class CreateMatch extends ConsumerStatefulWidget {
   final Reservation reservation;
-  const CreateMatch({Key? key, required this.reservation}) : super(key: key);
+
+  const CreateMatch({
+    Key? key,
+    required this.reservation,
+  }) : super(key: key);
 
   @override
-  State<CreateMatch> createState() => _CreateMatchState();
+  ConsumerState<CreateMatch> createState() => _CreateMatchState();
 }
 
-class _CreateMatchState extends State<CreateMatch>
-    with SingleTickerProviderStateMixin {
+class _CreateMatchState extends ConsumerState<CreateMatch>  with SingleTickerProviderStateMixin {
   Team? selectedTeam;
   bool isPrivateMatch = true;
   Team? invitedTeam;
@@ -56,12 +61,21 @@ class _CreateMatchState extends State<CreateMatch>
 
   Future<void> initTheGame() async {
     setState(() => isLoading = true);
-    final LoaduersTeams = await initGame(widget.reservation.facility.id);
-    setState(() {
-      isLoading = false;
-      uersTeams = LoaduersTeams;
-      selectedTeam = LoaduersTeams.firstOrNull;
-    });
+    try {
+      final authState = ref.read(authProvider);
+      final token = authState.accessToken;
+      if (token != null) {
+        final LoaduersTeams = await initGame(widget.reservation.facility.id, token);
+      setState(() {
+        isLoading = false;
+        uersTeams = LoaduersTeams;
+        selectedTeam = LoaduersTeams.firstOrNull;
+      });
+      }
+     
+    } catch (e) {
+      print('Error initializing teams: $e');
+    }
   }
 
   Future<void> _filterTeams(String name) async {

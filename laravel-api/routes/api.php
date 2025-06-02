@@ -28,8 +28,6 @@ Route::get('/sports', [SportController::class, 'index']);
 
 // Reservation
 Route::get('/reservation/init', [ReservationController::class, 'init']);
-Route::post('/reservation', [ReservationController::class, 'store']);
-Route::get('/user/{user}/reservations', [ReservationController::class, 'getUserReservations']);
 
 
 // facilities
@@ -40,7 +38,6 @@ Route::get('/sport-facilities/{facilityId}/available-time-slots', [TimeSlotInsta
 Route::get('/sport-facilities/{facilityId}/init-time-slots', [TimeSlotInstanceController::class, 'initTimeSlotInstances']);
 
 //init match
-Route::get('/sport-facilities/{facilityId}/init-game', [GameController::class, 'initGame']);
 Route::get('/games/{game}', [GameController::class, 'show']);
 
 
@@ -97,6 +94,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Route pour récupérer les informations de l'utilisateur connecté
     Route::get('/user/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
+
+    //reservations
+    Route::get('/user/reservations', [ReservationController::class, 'getUserReservations']);
+    Route::post('/reservation', [ReservationController::class, 'store']);
+
+    //games
+    Route::get('/sport-facilities/{facilityId}/init-game', [GameController::class, 'initGame']);
+
+
 });
 
 

@@ -162,7 +162,7 @@ Future<void> _pickImage() async {
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
     final response = await http.post(
-        Uri.parse('http://localhost:9000/public/api/register'),
+        Uri.parse('http://localhost:8000/api/register'),
         headers: {'Content-Type': 'application/json','Accept': 'application/json'},
         body: jsonEncode({
           'username': _nameController.text,
