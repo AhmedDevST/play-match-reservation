@@ -14,9 +14,10 @@ class Reservation extends Model
 
     protected $fillable = [
         'user_id',
-        'facility_time_slot_id',
-        'match_id', // Corresponds to game_id conceptually
+        'time_slot_instance_id',
+        'match_id',
         'date',
+        'auto_confirm',
         'total_price',
         'status',
     ];
@@ -24,6 +25,7 @@ class Reservation extends Model
     protected $casts = [
         'date' => 'datetime',
         'total_price' => 'decimal:2',
+        'auto_confirm' => 'boolean',
         'status' => ReservationStatus::class,
     ];
 
@@ -32,9 +34,9 @@ class Reservation extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function facilityTimeSlot(): BelongsTo
+    public function TimeSlotInstance(): BelongsTo
     {
-        return $this->belongsTo(FacilityTimeSlot::class);
+        return $this->belongsTo(TimeSlotInstance::class);
     }
 
     public function game(): BelongsTo
@@ -46,4 +48,4 @@ class Reservation extends Model
     {
         return $this->hasMany(Payment::class);
     }
-} 
+}

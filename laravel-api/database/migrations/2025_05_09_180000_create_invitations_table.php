@@ -19,7 +19,6 @@ return new class extends Migration
             $table->foreignId('receiver_id')->constrained('users')->cascadeOnDelete();
             $table->enum('type', array_column(TypeInvitation::cases(), 'value'));
             $table->enum('status', array_column(InvitationStatus::cases(), 'value'))->default(InvitationStatus::PENDING->value);
-            $table->morphs('invitable');
             $table->timestamps();
         });
     }
@@ -31,4 +30,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('invitations');
     }
-}; 
+};

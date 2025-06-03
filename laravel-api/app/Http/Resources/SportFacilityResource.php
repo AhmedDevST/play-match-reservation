@@ -26,4 +26,4 @@ class SportFacilityResource extends JsonResource
             'primary_image' => Storage::url($this->images->where('is_primary', true)->first()?->path),
         ];
     }
-} 
+}

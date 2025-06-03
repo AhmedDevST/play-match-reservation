@@ -77,13 +77,14 @@ class TeamInvitationService {
 
   /// Répondre à une invitation d'équipe
   Future<Invitation> respondToInvitation(
-      Invitation invitation, InvitationStatus status) async {
+      Invitation invitation, InvitationStatus status, String token) async {
     try {
       final response = await http.post(
         Uri.parse('$TEAM_INVITATION_URL/${invitation.id}/respond'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Authorization':" Bearer $token",
         },
         body: jsonEncode({
           'status': status
@@ -110,8 +111,8 @@ class TeamInvitationService {
       throw Exception(
           'Erreur lors de la réponse à l\'invitation: ${response.statusCode}');
     } catch (e) {
-      debugPrint('Error in respondToInvitation: $e'); // Debug log
-      rethrow;
+      debugPrint('Error in respondToInvitation: $e'); 
+      rethrow; // Debug log
     }
   }
 

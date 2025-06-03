@@ -103,16 +103,16 @@ class _DateSelectorState extends State<DateSelector> {
                   width: 80,
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.blue : Colors.white,
+                    color: isSelected ? Theme.of(context).primaryColor : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected ? Colors.blue : Colors.grey.shade300,
+                      color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
                       width: 1.5,
                     ),
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
+                              color: Theme.of(context).primaryColor.withOpacity(0.3),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),

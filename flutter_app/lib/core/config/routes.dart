@@ -12,4 +12,9 @@ class Routes {
   static const String messages = '/messages';
   static const String friends = '/friends';
   static const String discover = '/discover';
+  static const String booking = '/booking';
+  static const String myBooking = '/my-booking';
+  static const String matchDetails = '/match-details';
+  static const String notifications = '/notifications';
+  
 }

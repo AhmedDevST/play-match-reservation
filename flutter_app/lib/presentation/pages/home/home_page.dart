@@ -39,7 +39,6 @@ class _HomePageState extends ConsumerState<HomePage>
   @override
   void initState() {
     super.initState();
-    
 
     // Configuration de l'animation
     _animationController = AnimationController(
@@ -174,7 +173,7 @@ class _HomePageState extends ConsumerState<HomePage>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Avatar de l'utilisateur
+                // Avatar and greeting
                 Row(
                   children:[
                     
@@ -182,9 +181,8 @@ class _HomePageState extends ConsumerState<HomePage>
                       tag: 'userAvatar',
                       child: GestureDetector(
                         onTap: () async {
-                          // Naviguer vers la page de profil
                           final prefs = await SharedPreferences.getInstance();
-                          final token = await prefs.getString('authToken');
+                          final token = prefs.getString('authToken');
                           if (token != null) {
                             Navigator.of(context).pushNamed('/profile');
                           }
@@ -246,7 +244,7 @@ class _HomePageState extends ConsumerState<HomePage>
                   ],
                 ),
 
-                // Icône de chat
+                // Chat icon
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.grey.shade100,
@@ -286,14 +284,14 @@ class _HomePageState extends ConsumerState<HomePage>
                       ],
                     ),
                     onPressed: () {
-                      // Naviguer vers la page de messagerie
                       Navigator.of(context).pushNamed('/messages');
                     },
                   ),
                 ),
               ],
             ),
-          ));
+          ),
+        );
       },
     );
   }
@@ -332,7 +330,8 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ));
+          ),
+        );
       },
     );
   }
@@ -506,7 +505,7 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          )
+          ),
         );
       },
     );
@@ -525,33 +524,35 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 40 - 40 * _fadeAnimation.value),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Catégories',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
+            opacity: _fadeAnimation.value,
+            child: Transform.translate(
+              offset: Offset(0, 40 - 40 * _fadeAnimation.value),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Catégories',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade800,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 15),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: filters.map((filter) {
-                      return _buildFilterItem(filter['icon'], filter['label']);
-                    }).toList(),
-                  ),
-                ],
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: filters.map((filter) {
+                        return _buildFilterItem(
+                            filter['icon'], filter['label']);
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ));
+            ));
       },
     );
   }
@@ -602,54 +603,54 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 50 - 50 * _fadeAnimation.value),
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF1E88E5).withOpacity(0.3),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 5),
+            opacity: _fadeAnimation.value,
+            child: Transform.translate(
+              offset: Offset(0, 50 - 50 * _fadeAnimation.value),
+              child: Container(
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1E88E5), Color(0xFF1565C0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Vos statistiques',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1E88E5).withOpacity(0.3),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                      offset: const Offset(0, 5),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: stats.map((stat) {
-                      return _buildStatItem(
-                        stat['icon'],
-                        stat['value'],
-                        stat['label'],
-                      );
-                    }).toList(),
-                  ),
-                ],
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Vos statistiques',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: stats.map((stat) {
+                        return _buildStatItem(
+                          stat['icon'],
+                          stat['value'],
+                          stat['label'],
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ));
+            ));
       },
     );
   }
@@ -696,99 +697,99 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-          opacity: _fadeAnimation.value,
-          child: Transform.translate(
-            offset: Offset(0, 55 - 55 * _fadeAnimation.value),
-            child: Container(
-              margin: const EdgeInsets.all(20),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    blurRadius: 10,
-                    spreadRadius: 2,
-                  ),
-                ],
-              ),
-              child: InkWell(
-                onTap: () {
-                  Navigator.pushNamed(context, '/team-dashboard');
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Mes Équipes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E88E5).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_forward,
-                            color: Color(0xFF1E88E5),
-                            size: 20,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E88E5).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.group,
-                            color: Color(0xFF1E88E5),
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Gérer vos équipes',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Voir les membres et les matchs',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+            opacity: _fadeAnimation.value,
+            child: Transform.translate(
+              offset: Offset(0, 55 - 55 * _fadeAnimation.value),
+              child: Container(
+                margin: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.1),
+                      blurRadius: 10,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
+                child: InkWell(
+                  onTap: () {
+                    Navigator.pushNamed(context, '/team-dashboard');
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Mes Équipes',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E88E5).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_forward,
+                              color: Color(0xFF1E88E5),
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 15),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E88E5).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.group,
+                              color: Color(0xFF1E88E5),
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Gérer vos équipes',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Voir les membres et les matchs',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ));
+            ));
       },
     );
   }
@@ -838,8 +839,6 @@ class _HomePageState extends ConsumerState<HomePage>
                     ],
                   ),
                   const SizedBox(height: 15),
-
-                  // Liste des réservations à venir
                   _buildReservationItem(
                     'Terrain de Football',
                     'Lun, 15 Juin • 18:00 - 19:30',
@@ -854,7 +853,8 @@ class _HomePageState extends ConsumerState<HomePage>
                 ],
               ),
             ),
-          ));
+          ),
+        );
       },
     );
   }

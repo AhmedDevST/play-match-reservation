@@ -33,9 +33,9 @@ class TimeZoneSelector extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: () => onTimeZoneSelected(zone),
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: isSelected ? Colors.blue : Colors.white,
+                    backgroundColor: isSelected ? Theme.of(context).primaryColor : Colors.white,
                     side: BorderSide(
-                      color: isSelected ? Colors.blue : Colors.grey.shade300,
+                      color: isSelected ? Theme.of(context).primaryColor : Colors.grey.shade300,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),

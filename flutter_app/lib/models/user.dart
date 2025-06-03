@@ -1,3 +1,5 @@
+import 'package:flutter_app/core/config/apiConfig.dart';
+
 class User {
   final int id; // Changé de String à dynamic pour supporter les deux types
   final String name;
@@ -45,7 +47,7 @@ class User {
   String get fullImagePath{
 
     
-      return 'http://localhost:9000$profileImage'; // Chemin par défaut
+    return '$API_URL$profileImage'; // Chemin par défaut
   
   }
 }

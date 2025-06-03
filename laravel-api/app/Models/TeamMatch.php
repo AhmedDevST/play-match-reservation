@@ -14,7 +14,7 @@ class TeamMatch extends Model
 
     protected $fillable = [
         'team_id',
-        'match_id', // Corresponds to game_id conceptually
+        'match_id', 
         'score',
         'is_winner',
     ];
@@ -33,4 +33,4 @@ class TeamMatch extends Model
     {
         return $this->belongsTo(Game::class, 'match_id'); // FK in db is match_id
     }
-} 
+}
