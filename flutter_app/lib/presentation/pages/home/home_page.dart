@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/user.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
@@ -82,12 +83,20 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
+     final user = ref.watch(currentUserProvider);
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Text('User not authenticated. Please log in.'),
+        ),
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             // En-tête avec profil et chat
-            _buildHeader(),
+            _buildHeader(user: user),
 
             // Contenu principal
             Expanded(
@@ -119,7 +128,23 @@ class _HomePageState extends ConsumerState<HomePage>
             ),
 
             // Barre de navigation inférieure
-            _buildBottomNavBar(),
+            BottomNavBar(
+              selectedIndex: _selectedIndex,
+              onItemSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+
+                if (index == 4) {
+                  // Handle logout
+                  ref.read(authProvider.notifier).logout();
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                } else if (index == 1) {
+                  // Navigate to friends page
+                  Navigator.of(context).pushNamed('/friends');
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -127,7 +152,7 @@ class _HomePageState extends ConsumerState<HomePage>
   }
 
   // En-tête avec profil et chat
-  Widget _buildHeader() {
+  Widget _buildHeader({required User user}) {
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -150,8 +175,9 @@ class _HomePageState extends ConsumerState<HomePage>
               children: [
                 // Avatar and greeting
                 Row(
-                  children: [
-                    Hero(
+                  children:[
+                    
+                       Hero(
                       tag: 'userAvatar',
                       child: GestureDetector(
                         onTap: () async {
@@ -173,18 +199,23 @@ class _HomePageState extends ConsumerState<HomePage>
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
-                            child: CircleAvatar(
-                              backgroundColor:
-                                  const Color(0xFF1E88E5).withOpacity(0.2),
-                              child: const Text(
-                                'M',
-                                style: TextStyle(
-                                  color: Color(0xFF1E88E5),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
+                            child: user.fullImagePath != null && user.fullImagePath.isNotEmpty
+                                ? Image.network(
+                                    user.fullImagePath,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.person,
+                                        color: Colors.grey,
+                                        size: 24,
+                                      );
+                                    },
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    color: Colors.grey,
+                                    size: 24,
+                                  ),
                           ),
                         ),
                       ),
@@ -201,7 +232,7 @@ class _HomePageState extends ConsumerState<HomePage>
                           ),
                         ),
                         Text(
-                          'Mohamed',
+                          user.name,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -906,90 +937,6 @@ class _HomePageState extends ConsumerState<HomePage>
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavBar() {
-    final List<Map<String, dynamic>> items = [
-      {'icon': Icons.home, 'label': 'Accueil'},
-      {'icon': Icons.people, 'label': 'Amis'},
-      {'icon': Icons.notifications, 'label': 'Notifications'},
-      {'icon': Icons.calendar_today, 'label': 'Réservations'},
-      {'icon': Icons.logout, 'label': 'Déconnexion'},
-    ];
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: List.generate(items.length, (index) {
-          return InkWell(
-            onTap: () {
-              switch (index) {
-                case 0:
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/', (route) => false);
-                  break;
-                case 1:
-                  Navigator.of(context).pushNamed('/friends');
-                  break;
-                case 2:
-                  Navigator.of(context).pushNamed('/notifications');
-                  break;
-                case 3:
-                  Navigator.of(context).pushNamed('/my-booking');
-                  break;
-                case 4:
-                  ref.read(authProvider.notifier).logout();
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/', (route) => false);
-                  break;
-              }
-
-              if (index != 4) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-              }
-            },
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  items[index]['icon'],
-                  color: _selectedIndex == index
-                      ? const Color(0xFF1E88E5)
-                      : Colors.grey.shade400,
-                  size: 22,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  items[index]['label'],
-                  style: TextStyle(
-                    color: _selectedIndex == index
-                        ? const Color(0xFF1E88E5)
-                        : Colors.grey.shade400,
-                    fontSize: 11,
-                    fontWeight: _selectedIndex == index
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
       ),
     );
   }

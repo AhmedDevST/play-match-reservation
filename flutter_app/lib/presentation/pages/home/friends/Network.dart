@@ -1,138 +1,86 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/providers/auth_provider.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class NetworkPage extends StatefulWidget {
-  const NetworkPage({super.key});
+class NetworkPage extends ConsumerStatefulWidget {
+  const NetworkPage({Key? key}) : super(key: key);
 
   @override
   _NetworkPageState createState() => _NetworkPageState();
 }
 
-class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin {
-  // Pour les onglets
+class _NetworkPageState extends ConsumerState<NetworkPage> with TickerProviderStateMixin {
+  // Define necessary variables
   late TabController _tabController;
-  
-  // Pour les animations
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
-  // Exemple de données d'amis
-  final List<Map<String, dynamic>> _friendsList = [
-    {
-      'name': 'Mehdi Kaouki',
-      'avatar': 'assets/images/avatar.png',
-      'status': 'En ligne',
-      'isOnline': true,
-      'lastSeen': '',
-      'sports': ['Football', 'Basketball']
-    },
-    {
-      'name': 'Karim Benzema',
-      'avatar': 'assets/images/avatar.png',
-      'status': 'Hors ligne',
-      'isOnline': false,
-      'lastSeen': 'Il y a 2h',
-      'sports': ['Football']
-    },
-    {
-      'name': 'Sara Lghoul',
-      'avatar': 'assets/images/avatar.png',
-      'status': 'En ligne',
-      'isOnline': true,
-      'lastSeen': '',
-      'sports': ['Handball', 'Basketball']
-    },
-    {
-      'name': 'Yassine Bounou',
-      'avatar': 'assets/images/avatar.png',
-      'status': 'Hors ligne',
-      'isOnline': false,
-      'lastSeen': 'Il y a 5h',
-      'sports': ['Football']
-    },
-  ];
-  
-  // Exemple de suggestions d'amis
-  final List<Map<String, dynamic>> _suggestedFriends = [
-    {
-      'name': 'Achraf Hakimi',
-      'avatar': 'assets/images/avatar.png',
-      'mutualFriends': 5,
-      'sports': ['Football']
-    },
-    {
-      'name': 'Soufiane Rahimi',
-      'avatar': 'assets/images/avatar.png',
-      'mutualFriends': 3,
-      'sports': ['Football', 'Basketball']
-    },
-    {
-      'name': 'Hakim Ziyech',
-      'avatar': 'assets/images/avatar.png',
-      'mutualFriends': 8,
-      'sports': ['Football', 'Handball']
-    },
-    {
-      'name': 'Fatima Zahra',
-      'avatar': 'assets/images/avatar.png',
-      'mutualFriends': 2,
-      'sports': ['Basketball']
-    },
-  ];
-  
-  // Pour la recherche
   final TextEditingController _searchController = TextEditingController();
+  List<Map<String, dynamic>> _friendsList = [];
   List<Map<String, dynamic>> _filteredFriends = [];
-  List<Map<String, dynamic>> _filteredSuggestions = [];
+  List<Map<String, dynamic>> _availableUsers = [];
   bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
-    
-    // Initialisation du contrôleur d'onglets
     _tabController = TabController(length: 2, vsync: this);
-    
-    // Initialisation de l'animation
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
         curve: Curves.easeOut,
       ),
     );
-    
     _animationController.forward();
-    
-    // Initialisation des listes filtrées
-    _filteredFriends = List.from(_friendsList);
-    _filteredSuggestions = List.from(_suggestedFriends);
-    
-    // Écoute des changements dans le champ de recherche
     _searchController.addListener(_filterLists);
+    _filteredFriends = List.from(_friendsList);
+    _fetchAvailableUsers();
   }
 
-  // Fonction pour filtrer les listes selon la recherche
+  Future<void> _fetchAvailableUsers() async {
+    final authState = ref.read(authProvider);
+    final token = authState.accessToken;
+    
+    final url = Uri.parse('http://localhost:9000/api/users/available');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> users = jsonDecode(response.body);
+      setState(() {
+        _availableUsers = users.map((user) => {
+          'id': user['id'],
+          'name': user['username'],
+          'avatar': user['profile_picture'],
+        }).toList();
+      });
+    } else {
+      print('Failed to fetch available users: ${response.body}');
+    }
+  }
+
   void _filterLists() {
     final query = _searchController.text.toLowerCase();
-    
     setState(() {
       _isSearching = query.isNotEmpty;
-      
       if (_isSearching) {
         _filteredFriends = _friendsList.where((friend) {
           return friend['name'].toLowerCase().contains(query);
         }).toList();
-        
-        _filteredSuggestions = _suggestedFriends.where((friend) {
-          return friend['name'].toLowerCase().contains(query);
-        }).toList();
       } else {
         _filteredFriends = List.from(_friendsList);
-        _filteredSuggestions = List.from(_suggestedFriends);
       }
     });
   }
@@ -413,74 +361,29 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
 
   // Onglet "Découvrir"
   Widget _buildDiscoverTab() {
-    if (_filteredSuggestions.isEmpty) {
+    if (_availableUsers.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search_off,
-              size: 80,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Aucune suggestion trouvée",
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey.shade600,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                _isSearching 
-                  ? "Essayez une autre recherche"
-                  : "Nous n'avons pas de suggestions pour le moment",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
+        child: Text(
+          'Aucun utilisateur disponible',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey.shade600,
+          ),
         ),
       );
     }
-    
-    return ListView(
+
+    return ListView.builder(
       padding: const EdgeInsets.all(16),
-      children: [
-        // Section des suggestions basées sur les sports
-        Text(
-          "Suggestions basées sur vos sports préférés",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        const SizedBox(height: 12),
-        
-        // Liste des suggestions
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _filteredSuggestions.length,
-          itemBuilder: (context, index) {
-            final suggestion = _filteredSuggestions[index];
-            return _buildSuggestionCard(suggestion);
-          },
-        ),
-      ],
+      itemCount: _availableUsers.length,
+      itemBuilder: (context, index) {
+        final user = _availableUsers[index];
+        return _buildUserCard(user);
+      },
     );
   }
 
-  // Carte de suggestion d'ami
-  Widget _buildSuggestionCard(Map<String, dynamic> suggestion) {
+  Widget _buildUserCard(Map<String, dynamic> user) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -496,121 +399,70 @@ class _NetworkPageState extends State<NetworkPage> with TickerProviderStateMixin
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.grey.shade300,
-              width: 2,
-            ),
-          ),
-          child: CircleAvatar(
-            backgroundColor: const Color(0xFF1E88E5).withOpacity(0.1),
-            child: Text(
-              suggestion['name'].substring(0, 1),
-              style: const TextStyle(
-                color: Color(0xFF1E88E5),
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-          ),
+        leading: CircleAvatar(
+          backgroundImage: user['fullImagePath'] != null
+              ? NetworkImage(user['fullImagePath'])
+              : null,
+          backgroundColor: Colors.grey.shade300,
+          child: user['fullImagePath'] == null
+              ? Text(
+                  user['name'].substring(0, 1),
+                  style: const TextStyle(
+                    color: Color(0xFF1E88E5),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                )
+              : null,
         ),
         title: Text(
-          suggestion['name'],
+          user['name'],
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
             color: Colors.grey.shade800,
           ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "${suggestion['mutualFriends']} amis en commun",
-              style: const TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Wrap(
-              spacing: 4,
-              children: (suggestion['sports'] as List<String>).map((sport) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E88E5).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    sport,
-                    style: const TextStyle(
-                      color: Color(0xFF1E88E5),
-                      fontSize: 10,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
         trailing: ElevatedButton(
-          onPressed: () {
-            // Ajouter l'ami
-            _addFriend(suggestion);
+          onPressed: () async {
+            await _sendFriendInvitation(user['id']);
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF1E88E5),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
           child: const Text(
-            "Ajouter",
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+            'Inviter',
+            style: TextStyle(color: Colors.white),
           ),
         ),
       ),
     );
   }
 
-  // Fonction pour ajouter un ami
-  void _addFriend(Map<String, dynamic> suggestion) {
-    // Simuler l'ajout d'un ami
-    setState(() {
-      final newFriend = {
-        'name': suggestion['name'],
-        'avatar': 'assets/images/avatar.png', // Utiliser un placeholder générique
-        'status': 'En ligne',
-        'isOnline': true,
-        'lastSeen': '',
-        'sports': suggestion['sports'],
-      };
-      
-      _friendsList.add(newFriend);
-      _filteredFriends = List.from(_friendsList);
-      
-      // Retirer de la liste des suggestions
-      _suggestedFriends.removeWhere((item) => item['name'] == suggestion['name']);
-      _filteredSuggestions = List.from(_suggestedFriends);
-    });
-    
-    // Afficher un message de confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("${suggestion['name']} a été ajouté à vos amis"),
-        backgroundColor: const Color(0xFF2EE59D),
-        duration: const Duration(seconds: 2),
-      ),
+  Future<void> _sendFriendInvitation(int userId) async {
+    final url = Uri.parse('http://your-backend-url/api/invitations/send');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer YOUR_AUTH_TOKEN', // Replace with actual token
+      },
+      body: jsonEncode({'receiver_id': userId}),
     );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invitation envoyée à ${userId}'),
+          backgroundColor: const Color(0xFF2EE59D),
+        ),
+      );
+    } else {
+      print('Failed to send invitation: ${response.body}');
+    }
   }
 
   // Boîte de dialogue pour ajouter un ami
