@@ -68,7 +68,7 @@ Future<List<TimeSlot>> fetchTimeSlots(int facilityId, DateTime date) async {
 }
 
 void main() async {
-  final timeSlots = await fetchTimeSlots(1, DateTime(2025, 5, 23));
+  final timeSlots = await fetchTimeSlots(4, DateTime(2025, 06, 07));
   print(timeSlots.length);
 }
 

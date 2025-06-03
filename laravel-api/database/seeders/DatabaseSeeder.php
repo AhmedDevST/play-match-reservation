@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\RecurringTimeSlot;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -21,16 +22,17 @@ class DatabaseSeeder extends Seeder
         //]);
 
         $this->call([
-            UsersTableSeeder::class,
+          //  UsersTableSeeder::class,
             SportSeeder::class,
             SportFacilitySeeder::class,
             FacilitySportSeeder::class,
             ImageFacilitySeeder::class,
-            TimeZoneSeeder::class,
             RecurringTimeSlotSeeder::class,
+           /* TimeZoneSeeder::class,
+
             TimeSlotInstanceSeeder::class,
             TeamsTableSeeder::class,
-            UserTeamLinksTableSeeder::class,
+            UserTeamLinksTableSeeder::class,*/
         ]);
     }
 }
