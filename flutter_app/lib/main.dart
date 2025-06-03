@@ -34,6 +34,7 @@ class MyApp extends StatelessWidget {
       title: 'Play Match Reservation',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        primaryColor: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       initialRoute: Routes.splash,
