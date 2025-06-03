@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\InvitationController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -78,6 +79,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Route pour récupérer les informations de l'utilisateur connecté
     Route::get('/user/profile', [UserController::class, 'getProfile'])->middleware('auth:sanctum');
+
+    // Route for sending friendship invitations
+    Route::post('/invitations/send', [InvitationController::class, 'sendFriendInvitation'])->middleware('auth:sanctum');
+    // Route to get available users for invitations
+    Route::get('/invitations/available-users', [UserController::class, 'getAvailableUsers'])->middleware('auth:sanctum');
 });
 
 

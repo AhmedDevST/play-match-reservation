@@ -8,4 +8,8 @@ class Routes {
   static const String teamInvitations = '/team-invitations';
   static const String teamDetails = '/team-details';
   static const String profile = '/profile';
+  static const String splash = '/splash';
+  static const String messages = '/messages';
+  static const String friends = '/friends';
+  static const String discover = '/discover';
 }

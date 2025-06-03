@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/user.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
@@ -83,12 +84,20 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
+     final user = ref.watch(currentUserProvider);
+    if (user == null) {
+      return Scaffold(
+        body: Center(
+          child: Text('User not authenticated. Please log in.'),
+        ),
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
             // En-tête avec profil et chat
-            _buildHeader(),
+            _buildHeader(user: user),
 
             // Contenu principal
             Expanded(
@@ -120,7 +129,23 @@ class _HomePageState extends ConsumerState<HomePage>
             ),
 
             // Barre de navigation inférieure
-            _buildBottomNavBar(),
+            BottomNavBar(
+              selectedIndex: _selectedIndex,
+              onItemSelected: (index) {
+                setState(() {
+                  _selectedIndex = index;
+                });
+
+                if (index == 4) {
+                  // Handle logout
+                  ref.read(authProvider.notifier).logout();
+                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                } else if (index == 1) {
+                  // Navigate to friends page
+                  Navigator.of(context).pushNamed('/friends');
+                }
+              },
+            ),
           ],
         ),
       ),
@@ -128,7 +153,7 @@ class _HomePageState extends ConsumerState<HomePage>
   }
 
   // En-tête avec profil et chat
-  Widget _buildHeader() {
+  Widget _buildHeader({required User user}) {
     return AnimatedBuilder(
       animation: _animationController,
       builder: (context, child) {
@@ -151,18 +176,18 @@ class _HomePageState extends ConsumerState<HomePage>
               children: [
                 // Avatar de l'utilisateur
                 Row(
-                  children: [
-                    Hero(
+                  children:[
+                    
+                       Hero(
                       tag: 'userAvatar',
                       child: GestureDetector(
                         onTap: () async {
                           // Naviguer vers la page de profil
-                         
-                         final prefs = await SharedPreferences.getInstance();
-                         final token= await  prefs.getString('authToken');
-                        if(token != null) {
-                          Navigator.of(context).pushNamed('/profile');
-                        } 
+                          final prefs = await SharedPreferences.getInstance();
+                          final token = await prefs.getString('authToken');
+                          if (token != null) {
+                            Navigator.of(context).pushNamed('/profile');
+                          }
                         },
                         child: Container(
                           height: 40,
@@ -176,18 +201,23 @@ class _HomePageState extends ConsumerState<HomePage>
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
-                            child: CircleAvatar(
-                              backgroundColor:
-                                  const Color(0xFF1E88E5).withOpacity(0.2),
-                              child: const Text(
-                                'M',
-                                style: TextStyle(
-                                  color: Color(0xFF1E88E5),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ),
+                            child: user.fullImagePath != null && user.fullImagePath.isNotEmpty
+                                ? Image.network(
+                                    user.fullImagePath,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.person,
+                                        color: Colors.grey,
+                                        size: 24,
+                                      );
+                                    },
+                                  )
+                                : const Icon(
+                                    Icons.person,
+                                    color: Colors.grey,
+                                    size: 24,
+                                  ),
                           ),
                         ),
                       ),
@@ -204,7 +234,7 @@ class _HomePageState extends ConsumerState<HomePage>
                           ),
                         ),
                         Text(
-                          'Mohamed',
+                          user.name,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -908,27 +938,6 @@ class _HomePageState extends ConsumerState<HomePage>
           ),
         ],
       ),
-    );
-  }
-
-  // Barre de navigation inférieure
-  Widget _buildBottomNavBar() {
-    return BottomNavBar(
-      selectedIndex: _selectedIndex,
-      onItemSelected: (index) {
-        setState(() {
-          _selectedIndex = index;
-        });
-
-        if (index == 4) {
-          // Si c'est le bouton de déconnexion
-          ref.read(authProvider.notifier).logout();
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
-        } else if (index == 1) {
-          // Si c'est le bouton des amis
-          Navigator.of(context).pushNamed('/friends');
-        }
-      },
     );
   }
 }

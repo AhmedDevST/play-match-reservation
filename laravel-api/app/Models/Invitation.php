@@ -19,7 +19,7 @@ class Invitation extends Model
         'type',
         'status',
         'invitable_type',
-        'invitable_id'
+        'invitable_id',
     ];
 
     protected $casts = [
@@ -27,6 +27,7 @@ class Invitation extends Model
         'status' => InvitationStatus::class,
     ];
 
+    // Define relationships
     public function sender(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sender_id');

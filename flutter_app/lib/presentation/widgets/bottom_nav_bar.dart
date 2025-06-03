@@ -38,7 +38,17 @@ class BottomNavBar extends StatelessWidget {
         children: List.generate(items.length, (index) {
           return InkWell(
             onTap: () {
-              onItemSelected(index);
+              if (index == 0) {
+                Navigator.of(context).pushNamed('/home');
+              } else if (index == 1) {
+                Navigator.of(context).pushNamed('/friends');
+              } else if (index == 2) {
+                Navigator.of(context).pushNamed('/notifications');
+              } else if (index == 3) {
+                Navigator.of(context).pushNamed('/reservations');
+              } else if (index == 4) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+              }
             },
             child: Column(
               mainAxisSize: MainAxisSize.min,

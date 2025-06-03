@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -48,4 +49,25 @@ class UserController extends Controller
             'cover' => $user->cover,
         ]);
     }
+
+    public function getAvailableUsers(Request $request): JsonResponse
+{
+    $currentUser = $request->user();
+
+    $excludedUserIds = Invitation::where(function ($query) use ($currentUser) {
+        $query->where('sender_id', $currentUser->id)
+              ->orWhere('receiver_id', $currentUser->id);
+    })
+    ->whereIn('status', ['pending', 'accepted']) // Exclude users with pending or accepted invitations
+    ->pluck('sender_id', 'receiver_id')
+    ->flatten()
+    ->unique();
+
+    $users = User::whereNotIn('id', $excludedUserIds)
+                 ->where('id', '!=', $currentUser->id)
+                 ->select('id', 'username', 'email', 'profile_picture')
+                 ->get();
+
+    return response()->json($users);
+}
 }

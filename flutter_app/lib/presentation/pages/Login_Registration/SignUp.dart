@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:mime/mime.dart';
+import 'package:lottie/lottie.dart';
 
 class SignUp extends ConsumerStatefulWidget {
   const SignUp({super.key});
@@ -26,8 +27,10 @@ class _SignUpState extends ConsumerState<SignUp> with SingleTickerProviderStateM
   final _confirmPasswordController = TextEditingController();
   
   final _picker = ImagePicker();
-  String?_selectedImage;
-  String? _base64Image;
+  
+  // Utiliser ValueNotifier pour éviter le rebuild complet
+  final ValueNotifier<String?> _selectedImageNotifier = ValueNotifier<String?>(null);
+  final ValueNotifier<String?> _base64ImageNotifier = ValueNotifier<String?>(null);
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -67,6 +70,8 @@ class _SignUpState extends ConsumerState<SignUp> with SingleTickerProviderStateM
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _animationController.dispose();
+    _selectedImageNotifier.dispose();
+    _base64ImageNotifier.dispose();
     super.dispose();
   }
 
@@ -127,7 +132,7 @@ class _SignUpState extends ConsumerState<SignUp> with SingleTickerProviderStateM
     );
   }
 
-Future<void> _pickImage() async {
+  Future<void> _pickImage() async {
     try {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
@@ -145,10 +150,9 @@ Future<void> _pickImage() async {
         final mimeType = lookupMimeType(image.path) ?? 'image/jpeg';
         final imageString = 'data:$mimeType;base64,$base64Image';
 
-        setState(() {
-          _selectedImage = image.path; // Pour l'affichage local
-          _base64Image = imageString; // Pour l'envoi au serveur
-        });
+        // Utiliser ValueNotifier au lieu de setState
+        _selectedImageNotifier.value = image.path;
+        _base64ImageNotifier.value = imageString;
       }
     } catch (e) {
       print('Error picking image: $e');
@@ -159,38 +163,76 @@ Future<void> _pickImage() async {
     }
   }
 
+  Future<void> _showSuccessDialog() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Lottie.network(
+                  'https://lottie.host/de911dfc-703a-4131-ae9a-ec69a5e06fbc/obAB83LlN9.json',
+                  repeat: false,
+                  width: 150,
+                  height: 150,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Inscription réussie !',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => Login()),
+                    );
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
     final response = await http.post(
-        Uri.parse('http://localhost:9000/public/api/register'),
-        headers: {'Content-Type': 'application/json','Accept': 'application/json'},
-        body: jsonEncode({
-          'username': _nameController.text,
-          'email': _emailController.text,
-          'password': _passwordController.text,
-          'password_confirmation': _confirmPasswordController.text,
-          'profile_picture': _base64Image ?? '',
-        }),
-      );
-final data = jsonDecode(response.body);
+      Uri.parse('http://localhost:9000/api/register'),
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+      body: jsonEncode({
+        'username': _nameController.text,
+        'email': _emailController.text,
+        'password': _passwordController.text,
+        'password_confirmation': _confirmPasswordController.text,
+        'profile_picture': _base64ImageNotifier.value ?? '',
+      }),
+    );
+    final data = jsonDecode(response.body);
 
-        if (response.statusCode == 200) {
-           
-        final userData = data['user'];
-        final token = data['token'];
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => Login()),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erreur : ${data['message']}')),
-          );
-        }
-      
-      }
-    
-  
+    if (response.statusCode == 200) {
+      await _showSuccessDialog();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur : ${data['message']}')),
+      );
+    }
+  }
 
   Widget _buildForm() {
     return Container(
@@ -211,27 +253,10 @@ final data = jsonDecode(response.body);
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Image de profil
+            // Image de profil avec ValueListenableBuilder
             _buildDelayedAnimation(
               child: Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: Colors.grey.shade200,
-                     
-                    ),
-                    Positioned(
-                      bottom: -10,
-                      right: -10,
-                      child: IconButton(
-                        icon: const Icon(Icons.add_a_photo),
-                        onPressed: _pickImage,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                child: _buildProfileImagePicker(),
               ),
               delayFactor: 1,
             ),
@@ -291,11 +316,8 @@ final data = jsonDecode(response.body);
             _buildDelayedAnimation(
               child: ElevatedButton(
                 onPressed: () {
-                 
                   if (_formKey.currentState!.validate()) {
-                      
-                      _signUp();
-                    // TODO: Implémenter la logique d'inscription
+                    _signUp();
                   } 
                 },
                 style: ElevatedButton.styleFrom(
@@ -333,8 +355,7 @@ final data = jsonDecode(response.body);
                   ),
                   TextButton(
                     onPressed: () {
-                      // Retourner à la page de connexion
-                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login()));
+                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => Login()));
                     },
                     child: const Text(
                       'Se connecter',
@@ -351,6 +372,53 @@ final data = jsonDecode(response.body);
           ],
         ),
       ),
+    );
+  }
+
+  // Widget séparé pour l'image de profil
+  Widget _buildProfileImagePicker() {
+    return ValueListenableBuilder<String?>(
+      valueListenable: _selectedImageNotifier,
+      builder: (context, selectedImage, child) {
+        return Stack(
+          children: [
+            CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.grey.shade200,
+              backgroundImage: selectedImage != null 
+                ? (kIsWeb 
+                    ? NetworkImage(selectedImage) 
+                    : FileImage(File(selectedImage))) as ImageProvider
+                : null,
+              child: selectedImage == null 
+                ? Icon(
+                    Icons.person,
+                    size: 50,
+                    color: Colors.grey.shade400,
+                  )
+                : null,
+            ),
+            Positioned(
+              bottom: -10,
+              right: -10,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.add_a_photo,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: _pickImage,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -454,6 +522,11 @@ final data = jsonDecode(response.body);
               ),
             ),
             validator: (value) {
+              if (controller == _confirmPasswordController) {
+                if (value != _passwordController.text) {
+                  return 'Les mots de passe ne correspondent pas';
+                }
+              }
               if (value == null || value.isEmpty) {
                 return 'Veuillez entrer un mot de passe';
               }
@@ -473,13 +546,11 @@ final data = jsonDecode(response.body);
     required Widget child,
     required int delayFactor,
   }) {
-    // Créer une animation décalée basée sur le facteur de délai
     final delay = Duration(milliseconds: 150 * delayFactor);
     
     return FutureBuilder(
       future: Future.delayed(delay),
       builder: (context, snapshot) {
-        // Si le délai n'est pas terminé, afficher un conteneur vide avec la même taille
         if (snapshot.connectionState != ConnectionState.done) {
           return Opacity(
             opacity: 0,
@@ -487,7 +558,6 @@ final data = jsonDecode(response.body);
           );
         }
         
-        // Sinon, afficher l'élément avec une animation
         return AnimatedOpacity(
           opacity: 1.0,
           duration: const Duration(milliseconds: 400),
@@ -503,5 +573,3 @@ final data = jsonDecode(response.body);
     );
   }
 }
-
-// Classe pour dessiner des bulles animées en arrière-plan

@@ -131,14 +131,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
         background: Stack(
           children: [
             // Image de couverture
-            Positioned.fill(              child: Image.network(
-              userData.fullImagePath ,
+            Positioned.fill(
+              child: Image.network(
+                userData.fullImagePath,
                 fit: BoxFit.cover,
-                // errorBuilder: (context, error, stackTrace) {
-                //   return Container(
-                //     color: const Color(0xFF1E88E5),
-                //   );
-                // },
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey.shade300,
+                    child: const Icon(
+                      Icons.broken_image,
+                      color: Colors.grey,
+                      size: 50,
+                    ),
+                  );
+                },
               ),
             ),
             // Overlay dégradé
@@ -187,10 +193,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                             ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(40),                            child: Image.network(
-                              userData.fullImagePath != null 
-                                ? 'http://localhost:9000/storage/${userData.fullImagePath}'
-                                : 'http://localhost:9000/storage/user_images/default.jpeg',
+                            borderRadius: BorderRadius.circular(40),
+                            child: Image.network(
+                              userData.fullImagePath,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
                                 return Container(
@@ -370,8 +375,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                 ],
               ),
             ),
-          ),
-        );
+          ));
       },
     );
   }
