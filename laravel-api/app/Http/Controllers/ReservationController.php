@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\InvitationStatus;
 use App\Enums\MatchStatus;
 use App\Enums\MatchType;
+use App\Enums\NotificationType;
 use App\Enums\ReservationStatus;
 use App\Enums\TimeSlotsStatus;
 use App\Enums\TypeInvitation;
@@ -72,7 +73,7 @@ class ReservationController extends Controller
     public function store(Request $request)
     {
         // Step 1: Check if the user is authenticated
-         $userId = Auth::user()->id ?? null;
+        $userId = Auth::user()->id ?? null;
         if (!$userId) {
             return response()->json([
                 'message' => 'User not authenticated.',
@@ -85,8 +86,8 @@ class ReservationController extends Controller
                 'success' => false,
             ], 422);
         }
-         $is_match = $request->input('is_match');
-        if ($is_match == false ) {
+        $is_match = $request->input('is_match');
+        if ($is_match == false) {
             $validator = Validator::make($request->all(), [
                 'time_slot_id' => [
                     'required',
@@ -263,6 +264,17 @@ class ReservationController extends Controller
                     ]);
                     $invitation->invitable()->associate($match);
                     $invitation->save();
+
+                    //Créer une notification pour l'utilisateur invité
+                    $notificationController = new NotificationController();
+                    $notificationController->create(
+                        $team2->captain->user_id,
+                        NotificationType::INVITATION_NOTIFICATION,
+                        'Invitation de match',
+                        "Vous avez reçu une invitation pour un match de {$team1->sport->name} contre {$team2->name}.",
+                        $invitation->id,
+                        Invitation::class
+                    );
                 }
                 DB::commit();
                 return response()->json([
@@ -272,7 +284,7 @@ class ReservationController extends Controller
             } catch (\Exception $e) {
                 DB::rollBack();
                 return response()->json([
-                    'message' => 'Reservation failed'.$e,
+                    'message' => 'Reservation failed' . $e,
                     'success' => false,
                 ], 500);
             }

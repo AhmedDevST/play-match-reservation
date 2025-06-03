@@ -8,6 +8,7 @@ use App\Http\Resources\TeamResource;
 use App\Http\Resources\GameResource;
 use App\Models\Team;
 use App\Models\Game;
+use App\Models\Invitation;
 
 class NotificationResource extends JsonResource
 {
@@ -44,7 +45,7 @@ class NotificationResource extends JsonResource
             case Invitation::class:
             case 'App\\Models\\Invitation':
                 return new InvitationResource($this->notifiable);
-            
+
             default:
                 return null;
         }

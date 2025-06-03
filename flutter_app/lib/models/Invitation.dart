@@ -58,9 +58,8 @@ class Invitation implements NotifiableObject {
       invitable: json['invitable'] != null
           ? InvitableObject.fromJson(
               json['invitable'],
-              InvitationType.values.firstWhere(
-                (e) => e.toString().split('.').last == json['type'],
-              ))
+              InvitationType.match
+              )
           : null,
     );
   }
