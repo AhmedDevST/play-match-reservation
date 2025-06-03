@@ -45,7 +45,7 @@ class BottomNavBar extends StatelessWidget {
               } else if (index == 2) {
                 Navigator.of(context).pushNamed('/notifications');
               } else if (index == 3) {
-                Navigator.of(context).pushNamed('/reservations');
+                Navigator.of(context).pushNamed('/my-booking');
               } else if (index == 4) {
                 Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
               }

@@ -28,11 +28,7 @@ class DatabaseSeeder extends Seeder
             FacilitySportSeeder::class,
             ImageFacilitySeeder::class,
             RecurringTimeSlotSeeder::class,
-           /* TimeZoneSeeder::class,
-
             TimeSlotInstanceSeeder::class,
-            TeamsTableSeeder::class,
-            UserTeamLinksTableSeeder::class,*/
         ]);
     }
 }
