@@ -7,7 +7,10 @@ enum NotificationType {
   const NotificationType(this.value);
   final String value;
 
-  static NotificationType fromString(String value) {
+  static NotificationType fromString(String? value) {
+    if (value == null) {
+      throw Exception('Type de notification null');
+    }
     switch (value) {
       case 'invitation_notification':
         return NotificationType.invitationNotification;
@@ -47,10 +50,12 @@ class NotificationModel {
       id: json['id'],
       userId: json['user_id'],
       type: type,
-      title: json['title'],
-      message: json['message'],
-      isRead: json['is_read'],
-      createdAt: DateTime.parse(json['created_at']),
+      title: json['title'] ?? '',
+      message: json['message'] ?? '',
+      isRead: json['is_read'] ?? false,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : DateTime.now(),
       notifiableId: json['notifiable_id'],
       notifiable: json['notifiable'] != null
           ? NotifiableObject.fromJson(json['notifiable'], type)

@@ -101,7 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Team Invitations
     Route::get('/teams/{team}/available-users', [TeamInvitationController::class, 'getUsersNotInTeamOrInvited']);
-    
+
     // User Team Details - Détails d'un utilisateur dans une équipe
     Route::get('/teams/{team}/users/{user}/details', [UserTeamDetailsController::class, 'getUserTeamDetails']);
 
@@ -115,7 +115,8 @@ Route::middleware('auth:sanctum')->group(function () {
     //games
     Route::get('/sport-facilities/{facilityId}/init-game', [GameController::class, 'initGame']);
 
-
+    //update staus invitation
+    Route::patch('/invitations/{id}/status', [InvitationController::class, 'updateStatus']);
 
     // Routes pour les notifications
     Route::prefix('notifications')->group(function () {
@@ -130,5 +131,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 //invitations
- Route::patch('/invitations/{id}/status', [InvitationController::class, 'updateStatus']);
+
 Route::post('/invitations', [InvitationController::class, 'store']);

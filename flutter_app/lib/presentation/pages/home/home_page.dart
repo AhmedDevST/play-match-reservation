@@ -132,137 +132,135 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Avatar de l'utilisateur
-                  Row(
-                    children: [
-                      Hero(
-                        tag: 'userAvatar',
-                        child: GestureDetector(
-                          onTap: () async {
-                            // Naviguer vers la page de profil
-
-                            final prefs = await SharedPreferences.getInstance();
-                            final token = await prefs.getString('authToken');
-                            if (token != null) {
-                              Navigator.of(context).pushNamed('/profile');
-                            }
-                          },
-                          child: Container(
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFF2EE59D),
-                                width: 2,
-                              ),
+          opacity: _fadeAnimation.value,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Avatar and greeting
+                Row(
+                  children: [
+                    Hero(
+                      tag: 'userAvatar',
+                      child: GestureDetector(
+                        onTap: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          final token = prefs.getString('authToken');
+                          if (token != null) {
+                            Navigator.of(context).pushNamed('/profile');
+                          }
+                        },
+                        child: Container(
+                          height: 40,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF2EE59D),
+                              width: 2,
                             ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: CircleAvatar(
-                                backgroundColor:
-                                    const Color(0xFF1E88E5).withOpacity(0.2),
-                                child: const Text(
-                                  'M',
-                                  style: TextStyle(
-                                    color: Color(0xFF1E88E5),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                  ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: CircleAvatar(
+                              backgroundColor:
+                                  const Color(0xFF1E88E5).withOpacity(0.2),
+                              child: const Text(
+                                'M',
+                                style: TextStyle(
+                                  color: Color(0xFF1E88E5),
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
                                 ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Bonjour,',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
-                            ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Bonjour,',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
                           ),
-                          Text(
-                            'Mohamed',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade800,
-                            ),
+                        ),
+                        Text(
+                          'Mohamed',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
 
-                  // Icône de chat
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      shape: BoxShape.circle,
-                    ),
-                    child: IconButton(
-                      icon: Stack(
-                        children: [
-                          const Icon(
-                            Icons.chat_bubble_outline,
-                            color: Color(0xFF1E88E5),
-                          ),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
+                // Chat icon
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: Stack(
+                      children: [
+                        const Icon(
+                          Icons.chat_bubble_outline,
+                          color: Color(0xFF1E88E5),
+                        ),
+                        Positioned(
+                          right: 0,
+                          top: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            constraints: const BoxConstraints(
+                              minWidth: 12,
+                              minHeight: 12,
+                            ),
+                            child: const Text(
+                              '2',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 8,
+                                fontWeight: FontWeight.bold,
                               ),
-                              constraints: const BoxConstraints(
-                                minWidth: 12,
-                                minHeight: 12,
-                              ),
-                              child: const Text(
-                                '2',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
-                        ],
-                      ),
-                      onPressed: () {
-                        // Naviguer vers la page de messagerie
-                        Navigator.of(context).pushNamed('/messages');
-                      },
+                        ),
+                      ],
                     ),
+                    onPressed: () {
+                      Navigator.of(context).pushNamed('/messages');
+                    },
                   ),
-                ],
-              ),
-            ));
+                ),
+              ],
+            ),
+          ),
+        );
       },
     );
   }
@@ -273,35 +271,36 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Transform.translate(
-              offset: Offset(0, 20 - 20 * _fadeAnimation.value),
-              child: Padding(
-                padding: const EdgeInsets.only(
-                    left: 20, right: 20, top: 20, bottom: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Réservez votre terrain',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade800,
-                      ),
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 - 20 * _fadeAnimation.value),
+            child: Padding(
+              padding: const EdgeInsets.only(
+                  left: 20, right: 20, top: 20, bottom: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Réservez votre terrain',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Trouvez et réservez facilement des terrains sportifs',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Trouvez et réservez facilement des terrains sportifs',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }
@@ -312,171 +311,171 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Transform.translate(
-              offset: Offset(0, 30 - 30 * _fadeAnimation.value),
-              child: Container(
-                height: 200,
-                margin: const EdgeInsets.symmetric(vertical: 20),
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        onPageChanged: (int page) {
-                          setState(() {
-                            _currentPage = page;
-                          });
-                        },
-                        itemCount: _imageList.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 20),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(15),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 30 - 30 * _fadeAnimation.value),
+            child: Container(
+              height: 200,
+              margin: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      onPageChanged: (int page) {
+                        setState(() {
+                          _currentPage = page;
+                        });
+                      },
+                      itemCount: _imageList.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(15),
+                            child: Stack(
+                              children: [
+                                // Image
+                                Positioned.fill(
+                                  child: Image.asset(
+                                    _imageList[index],
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        color: Colors.grey.shade300,
+                                        child: const Center(
+                                          child: Icon(
+                                            Icons.image_not_supported,
+                                            color: Colors.grey,
+                                            size: 40,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(15),
-                              child: Stack(
-                                children: [
-                                  // Image
-                                  Positioned.fill(
-                                    child: Image.asset(
-                                      _imageList[index],
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Container(
-                                          color: Colors.grey.shade300,
-                                          child: const Center(
-                                            child: Icon(
-                                              Icons.image_not_supported,
-                                              color: Colors.grey,
-                                              size: 40,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
 
-                                  // Overlay dégradé
-                                  Positioned.fill(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topCenter,
-                                          end: Alignment.bottomCenter,
-                                          colors: [
-                                            Colors.transparent,
-                                            Colors.black.withOpacity(0.7),
-                                          ],
-                                          stops: const [0.6, 1.0],
-                                        ),
+                                // Overlay dégradé
+                                Positioned.fill(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black.withOpacity(0.7),
+                                        ],
+                                        stops: const [0.6, 1.0],
                                       ),
                                     ),
                                   ),
+                                ),
 
-                                  // Texte d'information
-                                  Positioned(
-                                    bottom: 15,
-                                    left: 15,
-                                    right: 15,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Terrain ${index + 1}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.location_on,
-                                              color: Colors.white,
-                                              size: 14,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Casablanca, Maroc',
-                                              style: TextStyle(
-                                                color: Colors.white
-                                                    .withOpacity(0.9),
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-
-                                  // Bouton de réservation
-                                  Positioned(
-                                    top: 15,
-                                    right: 15,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF2EE59D),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: const Text(
-                                        'Réserver',
-                                        style: TextStyle(
+                                // Texte d'information
+                                Positioned(
+                                  bottom: 15,
+                                  left: 15,
+                                  right: 15,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Terrain ${index + 1}',
+                                        style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 12,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.location_on,
+                                            color: Colors.white,
+                                            size: 14,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Casablanca, Maroc',
+                                            style: TextStyle(
+                                              color:
+                                                  Colors.white.withOpacity(0.9),
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Bouton de réservation
+                                Positioned(
+                                  top: 15,
+                                  right: 15,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF2EE59D),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      'Réserver',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    // Indicateurs de page
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(_imageList.length, (index) {
-                        return Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: _currentPage == index
-                                ? const Color(0xFF2EE59D)
-                                : Colors.grey.shade300,
                           ),
                         );
-                      }),
+                      },
                     ),
-                  ],
-                ),
+                  ),
+
+                  // Indicateurs de page
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_imageList.length, (index) {
+                      return Container(
+                        width: 8,
+                        height: 8,
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _currentPage == index
+                              ? const Color(0xFF2EE59D)
+                              : Colors.grey.shade300,
+                        ),
+                      );
+                    }),
+                  ),
+                ],
               ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }
@@ -770,63 +769,61 @@ class _HomePageState extends ConsumerState<HomePage>
       animation: _animationController,
       builder: (context, child) {
         return Opacity(
-            opacity: _fadeAnimation.value,
-            child: Transform.translate(
-              offset: Offset(0, 60 - 60 * _fadeAnimation.value),
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Réservations à venir',
+          opacity: _fadeAnimation.value,
+          child: Transform.translate(
+            offset: Offset(0, 60 - 60 * _fadeAnimation.value),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Réservations à venir',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          // Voir toutes les réservations
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Voir tout',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                            color: Color(0xFF1E88E5),
+                            fontSize: 14,
                           ),
                         ),
-                        TextButton(
-                          onPressed: () {
-                            // Voir toutes les réservations
-                          },
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'Voir tout',
-                            style: TextStyle(
-                              color: Color(0xFF1E88E5),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 15),
-
-                    // Liste des réservations à venir
-                    _buildReservationItem(
-                      'Terrain de Football',
-                      'Lun, 15 Juin • 18:00 - 19:30',
-                      Icons.sports_soccer,
-                    ),
-                    const SizedBox(height: 15),
-                    _buildReservationItem(
-                      'Terrain de Basketball',
-                      'Mar, 16 Juin • 20:00 - 21:30',
-                      Icons.sports_basketball,
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  _buildReservationItem(
+                    'Terrain de Football',
+                    'Lun, 15 Juin • 18:00 - 19:30',
+                    Icons.sports_soccer,
+                  ),
+                  const SizedBox(height: 15),
+                  _buildReservationItem(
+                    'Terrain de Basketball',
+                    'Mar, 16 Juin • 20:00 - 21:30',
+                    Icons.sports_basketball,
+                  ),
+                ],
               ),
-            ));
+            ),
+          ),
+        );
       },
     );
   }
@@ -913,7 +910,6 @@ class _HomePageState extends ConsumerState<HomePage>
     );
   }
 
-  // Barre de navigation inférieure
   Widget _buildBottomNavBar() {
     final List<Map<String, dynamic>> items = [
       {'icon': Icons.home, 'label': 'Accueil'},
@@ -940,18 +936,28 @@ class _HomePageState extends ConsumerState<HomePage>
         children: List.generate(items.length, (index) {
           return InkWell(
             onTap: () {
-              if (index == 4) {
-                // Si c'est le bouton de déconnexion
-                // Naviguer vers la page initiale (LandingPage)
-                ref.read(authProvider.notifier).logout();
+              switch (index) {
+                case 0:
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/', (route) => false);
+                  break;
+                case 1:
+                  Navigator.of(context).pushNamed('/friends');
+                  break;
+                case 2:
+                  Navigator.of(context).pushNamed('/notifications');
+                  break;
+                case 3:
+                  Navigator.of(context).pushNamed('/my-booking');
+                  break;
+                case 4:
+                  ref.read(authProvider.notifier).logout();
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/', (route) => false);
+                  break;
+              }
 
-                Navigator.of(context)
-                    .pushNamedAndRemoveUntil('/', (route) => false);
-              } else if (index == 1) {
-                // Si c'est le bouton des amis
-                // Naviguer vers la page des amis
-                Navigator.of(context).pushNamed('/friends');
-              } else {
+              if (index != 4) {
                 setState(() {
                   _selectedIndex = index;
                 });

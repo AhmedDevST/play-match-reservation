@@ -15,7 +15,7 @@ class Invitation implements NotifiableObject {
   final DateTime createdAt;
   final DateTime? updatedAt;
   final String? invitableType;
-  final int invitableId;
+  final int? invitableId;
   final InvitableObject? invitable;
 
   Invitation({
@@ -27,11 +27,15 @@ class Invitation implements NotifiableObject {
     required this.createdAt,
     this.updatedAt,
     this.invitableType,
-    required this.invitableId,
+    this.invitableId,
     this.invitable,
   });
 
   factory Invitation.fromJson(Map<String, dynamic> json) {
+    final type = InvitationType.values.firstWhere(
+      (e) => e.toString().split('.').last == json['type'],
+    );
+
     return Invitation(
       id: json['id'],
       sender: json['sender'] != null
@@ -43,9 +47,7 @@ class Invitation implements NotifiableObject {
               'profile_image': null,
             }),
       receiver: User.fromJson(json['receiver']),
-      type: InvitationType.values.firstWhere(
-        (e) => e.toString().split('.').last == json['type'],
-      ),
+      type: type,
       status: InvitationStatus.values.firstWhere(
         (e) => e.toString().split('.').last == json['status'],
       ),
@@ -57,10 +59,8 @@ class Invitation implements NotifiableObject {
       invitableId: json['invitable_id'],
       invitable: json['invitable'] != null
           ? InvitableObject.fromJson(
-              json['invitable'],
-              InvitationType.values.firstWhere(
-                (e) => e.toString().split('.').last == json['type'],
-              ))
+              json['invitable'], type // Utiliser le bon type ici
+              )
           : null,
     );
   }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\TypeInvitation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\TeamResource;
@@ -40,23 +41,25 @@ class InvitationResource extends JsonResource
             return null;
         }
 
-        switch ($this->invitable_type) {
-            case Team::class:
-            case 'App\\Models\\Team':
-                $team = Team::find($this->invitable_id);
-                return $team ? [
-                    'id' => $team->id,
-                    'name' => $team->name,
-                    'image' => $team->image
-                ] : null;
+        switch ($this->type) {
+            case TypeInvitation::TEAM:
+            $team = Team::find($this->invitable_id);
+            return $team ? [
+                'id' => $team->id,
+                'name' => $team->name,
+                'image' => $team->image
+            ] : null;
 
-            case Game::class:
-            case 'App\\Models\\Game':
-                $game = Game::find($this->invitable_id);
-                return $game ? new GameResource($game) : null;
+            case TypeInvitation::MATCH:
+            $game = Game::find($this->invitable_id);
+            return $game ? [
+                'id' => $game->id,
+                'type' => $game->type,
+                'status' => $game->status,
+            ] : null;
 
             default:
-                return null;
+            return null;
         }
     }
 }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/core/services/Notification/Notification.dart';
 import 'package:flutter_app/core/services/invitation/TeamInvitationService.dart';
+import 'package:flutter_app/core/services/invitation/invitationService.dart';
 import 'package:flutter_app/models/Invitation.dart';
 import 'package:flutter_app/models/Notification.dart';
+import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:flutter_app/presentation/pages/match/details_match.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -14,7 +17,7 @@ class NotificationsPage extends ConsumerStatefulWidget {
 }
 
 class _NotificationsPageState extends ConsumerState<NotificationsPage> {
-  String _selectedFilter = 'Tout';
+  String _selectedFilter = 'All';
   late List<NotificationModel> _notifications = [];
   late List<NotificationModel> _filteredNotifications = [];
   bool isLoading = false;
@@ -22,6 +25,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   @override
   void initState() {
     super.initState();
+    _selectedFilter = "All";
     LoadNotification();
   }
 
@@ -36,10 +40,17 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       return;
     }
 
-    final invitation1 = await teamInvitationService.respondToInvitation(
-        invitation, status, token);
+    bool success = false;
+    if (invitation.type == InvitationType.team) {
+      await teamInvitationService.respondToInvitation(
+          invitation, status, token);
+      success = true; // Si pas d'exception, c'est réussi
+    } else if (invitation.type == InvitationType.friend ||
+        invitation.type == InvitationType.match) {
+      success = await respondToInvitation(invitation.id, status, token);
+    }
 
-    if (invitation1 == null) {
+    if (!success) {
       setState(() {
         isLoading = false;
       });
@@ -53,10 +64,22 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       );
       return;
     }
+  }
 
+  Future<void> markNotificationAsRead(int id) async {
+    final authState = ref.read(authProvider);
+    final token = authState.accessToken;
+    if (token == null || token.isEmpty) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+    await markAsRead(id, token);
   }
 
   Future<void> LoadNotification() async {
+    if (!mounted) return;
     setState(() {
       isLoading = true;
     });
@@ -64,6 +87,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     final authState = ref.read(authProvider);
     final token = authState.accessToken;
     if (token == null || token.isEmpty) {
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
@@ -73,6 +97,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     try {
       final loadedNotificationData = await getNotificationOfUser(token);
 
+      if (!mounted) return;
       setState(() {
         _notifications = loadedNotificationData;
         _filteredNotifications = _notifications;
@@ -80,15 +105,29 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       });
     } catch (e) {
       print('Erreur lors du chargement des notifications: $e');
+      if (!mounted) return;
       setState(() {
         isLoading = false;
       });
     }
   }
 
+  void filterNotifications() {
+    setState(() {
+      if (_selectedFilter.toLowerCase() == 'all') {
+        _filteredNotifications = _notifications;
+      } else {
+        _filteredNotifications = _notifications.where((notification) {
+          Invitation invitation = notification.notifiable as Invitation;
+          return invitation.type.name.toLowerCase() ==
+              _selectedFilter.toLowerCase();
+        }).toList();
+      }
+    });
+  }
+
   int get _unreadCount {
-    return 1;
-    //notifications.where((n) => !n.isRead).length;
+    return _notifications.where((n) => !n.isRead).length;
   }
 
   @override
@@ -130,45 +169,51 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios,
               color: Color(0xFF4A5568), size: 15),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomePage()),
+          ),
         ),
       ),
-      body: RefreshIndicator(
-        onRefresh: _refreshNotifications,
-        color: const Color(0xFF3182CE),
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // Filtres en haut
-            SliverToBoxAdapter(
-              child: _buildFilterTabs(),
-            ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: LoadNotification,
+              color: const Color(0xFF3182CE),
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Filtres en haut
+                  SliverToBoxAdapter(
+                    child: _buildFilterTabs(),
+                  ),
 
-            // Liste des notifications
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final filteredNotifications = _filteredNotifications;
-                  if (index >= filteredNotifications.length) return null;
-                  return _buildNotificationCard(filteredNotifications[index]);
-                },
-                childCount: _filteredNotifications.length,
+                  // Liste des notifications
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final filteredNotifications = _filteredNotifications;
+                        if (index >= filteredNotifications.length) return null;
+                        return _buildNotificationCard(
+                            filteredNotifications[index]);
+                      },
+                      childCount: _filteredNotifications.length,
+                    ),
+                  ),
+
+                  // Message si aucune notification
+                  if (_filteredNotifications.isEmpty)
+                    SliverToBoxAdapter(
+                      child: _buildEmptyState(),
+                    ),
+
+                  // Espacement en bas
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 80),
+                  ),
+                ],
               ),
             ),
-
-            // Message si aucune notification
-            if (_filteredNotifications.isEmpty)
-              SliverToBoxAdapter(
-                child: _buildEmptyState(),
-              ),
-
-            // Espacement en bas
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 80),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -179,24 +224,26 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildFilterChip('Tout', _selectedFilter == 'Tout'),
+            _buildFilterChip('All'),
             const SizedBox(width: 8),
-            _buildFilterChip('Amis', _selectedFilter == 'Amis'),
+            _buildFilterChip(InvitationType.friend.name),
             const SizedBox(width: 8),
-            _buildFilterChip('Équipes', _selectedFilter == 'Équipes'),
+            _buildFilterChip(InvitationType.team.name),
             const SizedBox(width: 8),
-            _buildFilterChip('Matchs', _selectedFilter == 'Matchs'),
+            _buildFilterChip(InvitationType.match.name),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildFilterChip(String label, bool isSelected) {
+  Widget _buildFilterChip(String type) {
+    bool isSelected = _selectedFilter == type;
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedFilter = label;
+          _selectedFilter = type;
+          filterNotifications();
         });
       },
       child: AnimatedContainer(
@@ -220,7 +267,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           ],
         ),
         child: Text(
-          label,
+          type,
           style: TextStyle(
             color: isSelected ? Colors.white : const Color(0xFF4A5568),
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -326,15 +373,14 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                color: _getNotificationColor(notification.type)
+                                color: _getNotificationColor(notification)
                                     .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
                                 _formatTimestamp(notification.createdAt),
                                 style: TextStyle(
-                                  color:
-                                      _getNotificationColor(notification.type),
+                                  color: _getNotificationColor(notification),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -359,8 +405,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
                         // Actions si nécessaire
                         if (notification.type ==
-                                NotificationType.invitationNotification &&
-                            !notification.isRead)
+                                NotificationType.invitationNotification)
                           _buildInvitationActions(notification),
 
                         // Détails spécifiques selon le type de notification
@@ -405,10 +450,9 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
             height: 48,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: _getNotificationColor(notification.type).withOpacity(0.1),
+              color: _getNotificationColor(notification).withOpacity(0.1),
               border: Border.all(
-                color:
-                    _getNotificationColor(notification.type).withOpacity(0.3),
+                color: _getNotificationColor(notification).withOpacity(0.3),
                 width: 2,
               ),
             ),
@@ -420,8 +464,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     ),
                   )
                 : Icon(
-                    _getNotificationIcon(notification.type),
-                    color: _getNotificationColor(notification.type),
+                    _getNotificationIcon(notification),
+                    color: _getNotificationColor(notification),
                     size: 22,
                   ),
           ),
@@ -545,21 +589,34 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     );
   }
 
-  IconData _getNotificationIcon(NotificationType type) {
-    switch (type) {
+  IconData _getNotificationIcon(NotificationModel notification) {
+    switch (notification.type) {
       case NotificationType.invitationNotification:
-        //selon type d'invitation
+        Invitation invitation = notification.notifiable as Invitation;
+        switch (invitation.type) {
+          case InvitationType.team:
+            return Icons.person_add;
 
-        return Icons.person_add;
+          case InvitationType.friend:
+            return Icons.person;
+          case InvitationType.match:
+            return Icons.gamepad;
+        }
     }
   }
 
-  Color _getNotificationColor(NotificationType type) {
-    switch (type) {
+  Color _getNotificationColor(NotificationModel notification) {
+    switch (notification.type) {
       case NotificationType.invitationNotification:
-        //selon type d'invitation
-
-        return const Color(0xFF3182CE);
+        Invitation invitation = notification.notifiable as Invitation;
+        switch (invitation.type) {
+          case InvitationType.team:
+            return const Color(0xFF38B2AC); // teal
+          case InvitationType.friend:
+            return const Color(0xFF805AD5); // purple
+          case InvitationType.match:
+            return const Color(0xFFED8936); // orange
+        }
     }
   }
 
@@ -582,13 +639,27 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
   void _handleNotificationTap(NotificationModel notification) {
     if (!notification.isRead) {
-      //maque is Read in backend True
+      markNotificationAsRead(notification.id);
     }
     // Navigation selon le type de notification
     switch (notification.type) {
       case NotificationType.invitationNotification:
-        // Naviguer vers les amis
-        // selon invitation type
+        Invitation invitation = notification.notifiable as Invitation;
+        switch (invitation.type) {
+          case InvitationType.team:
+            break;
+          case InvitationType.friend:
+            break;
+          case InvitationType.match:
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MatchDetails(
+                  idGame: invitation.invitableId ?? 0,
+                ),
+              ),
+            );
+        }
         break;
     }
   }
@@ -610,23 +681,6 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     });
   }
 
-  Future<void> _refreshNotifications() async {
-    // Simuler le rechargement
-    await Future.delayed(const Duration(seconds: 1));
-
-    // Ici vous pourriez recharger les notifications depuis l'API
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Notifications mises à jour'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
   // Méthodes utilitaires pour accéder aux attributs notifiable
   String? _getNotificationImage(NotificationModel notification) {
     if (notification.notifiable == null) return null;
@@ -636,13 +690,18 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         Invitation invitation = notification.notifiable as Invitation;
         switch (invitation.type) {
           case InvitationType.team:
-            return (invitation.invitable as TeamInvitable).fullImagePath;
+            if (invitation.invitable is TeamInvitable) {
+              return (invitation.invitable as TeamInvitable).fullImagePath;
+            }
+            break;
 
           case InvitationType.friend:
-            break;
+            // Toujours retourner null pour les friend requests afin d'utiliser l'icône utilisateur
+            return null;
 
           case InvitationType.match:
-            break;
+            // Les matchs n'ont généralement pas d'image
+            return null;
         }
         break;
     }
@@ -656,12 +715,19 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     Invitation invitation = notification.notifiable as Invitation;
     switch (invitation.type) {
       case InvitationType.team:
-        return (invitation.invitable as TeamInvitable).name;
+        if (invitation.invitable is TeamInvitable) {
+          return (invitation.invitable as TeamInvitable).name;
+        }
+        return 'Équipe';
       case InvitationType.friend:
-        //return (invitation.invitable as UserInvitable).name;
-        return 'Ami';
+        if (invitation.invitable is UserInvitable) {
+          return (invitation.invitable as UserInvitable).name;
+        }
+        return invitation.sender.name;
       case InvitationType.match:
-        //return (invitation.invitable as GameInvitable).name;
+        if (invitation.invitable is GameInvitable) {
+          return (invitation.invitable as GameInvitable).name;
+        }
         return 'Match';
     }
   }
