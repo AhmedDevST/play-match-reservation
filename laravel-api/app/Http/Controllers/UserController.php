@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Invitation;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -47,5 +48,55 @@ class UserController extends Controller
             'avatar' => $user->avatar,
             'cover' => $user->cover,
         ]);
+    }
+
+    public function getAvailableUsers(Request $request): JsonResponse
+{
+    $currentUser = $request->user();
+
+    // Get all user IDs that have any invitation relationship with current user
+    $excludedUserIds = Invitation::where(function ($query) use ($currentUser) {
+        $query->where('sender_id', $currentUser->id)
+              ->orWhere('receiver_id', $currentUser->id);
+    })
+    ->where('type', 'friend') // Only check friend invitations
+    ->get()
+    ->map(function ($invitation) use ($currentUser) {
+        // Return the other user's ID (not the current user's ID)
+        return $invitation->sender_id === $currentUser->id 
+            ? $invitation->receiver_id 
+            : $invitation->sender_id;
+    })
+    ->unique();
+
+    $users = User::whereNotIn('id', $excludedUserIds)
+                 ->where('id', '!=', $currentUser->id)
+                 ->select('id', 'username', 'email', 'profile_picture')
+                 ->get();
+
+    return response()->json($users);
+}
+
+// get friends of the user
+    public function getFriends(Request $request): JsonResponse
+    {
+        $currentUser = $request->user();
+
+        // Get all friends of the current user
+        $friends = Invitation::where(function ($query) use ($currentUser) {
+            $query->where('sender_id', $currentUser->id)
+                  ->orWhere('receiver_id', $currentUser->id);
+        })
+        ->where('type', 'friend')
+        ->where('status', 'accepted')
+        ->with(['sender:id,username,email,profile_picture', 'receiver:id,username,email,profile_picture'])
+        ->get()
+        ->map(function ($invitation) use ($currentUser) {
+            return $invitation->sender_id === $currentUser->id 
+                ? $invitation->receiver 
+                : $invitation->sender;
+        });
+
+        return response()->json($friends);
     }
 }

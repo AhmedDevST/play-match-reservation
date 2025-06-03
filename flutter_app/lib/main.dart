@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/presentation/pages/Notification/Notifications.dart';
+import 'package:flutter_app/presentation/pages/home/friends/Network.dart';
 import 'package:flutter_app/presentation/pages/home/home_page.dart';
+import 'package:flutter_app/presentation/pages/messaging/ChatDetailPage.dart';
 import 'package:flutter_app/presentation/pages/profile/profile_page.dart';
 import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +13,9 @@ import 'package:flutter_app/presentation/pages/Team/Create_Team.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_invitations.dart';
 import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
 import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
+import 'package:flutter_app/presentation/pages/splash/splash_screen.dart';
 import 'package:flutter_app/core/config/routes.dart';
+import 'package:flutter_app/presentation/pages/discover/Discover.dart';
 
 void main() {
   runApp(
@@ -32,12 +36,14 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      initialRoute: Routes.landing,
+      initialRoute: Routes.splash,
       onGenerateRoute: (RouteSettings settings) {
         return MaterialPageRoute(
           settings: settings,
           builder: (BuildContext context) {
             switch (settings.name) {
+              case Routes.splash:
+                return const SplashScreen();
               case Routes.landing:
                 return const LandingPage();
               case Routes.booking:
@@ -61,6 +67,11 @@ class MyApp extends StatelessWidget {
                 return const NotificationsPage();
               case Routes.home:
                 return const HomePage();
+              case Routes.messages:
+                return const ChatDetailPage();
+              case Routes.friends:
+                return const NetworkPage();
+
               default:
                 return const UserTeamDash();
             }

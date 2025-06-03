@@ -7,6 +7,8 @@ import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/models/user.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
+// Removed incorrect import for lottie_flutter
+import 'package:lottie/lottie.dart';
 
 final rememberMeProvider = StateProvider<bool>((ref) => false);
 final passwordVisibilityProvider = StateProvider<bool>((ref) => false);
@@ -14,7 +16,7 @@ final passwordVisibilityProvider = StateProvider<bool>((ref) => false);
 class Login extends ConsumerStatefulWidget {
   const Login({super.key});
 
-  @override 
+  @override
   ConsumerState<Login> createState() => _LoginState();
 }
 
@@ -56,7 +58,45 @@ class _LoginState extends ConsumerState<Login>
     });
   }
 
+  Future<void> _showErrorDialog(String message) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Lottie.network(
+                  'https://lottie.host/15ef7d76-2765-45b1-ba69-5e7bf5a4c356/77l2REp3iW.json'),
+              const SizedBox(height: 10),
+              Text(
+                "Erreur de connexion",
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return; // Arrêtez si le formulaire n'est pas valide
+    }
+
     final email = _emailController.text;
     final password = _passwordController.text;
     final rememberMe = ref.read(rememberMeProvider);
@@ -76,17 +116,16 @@ class _LoginState extends ConsumerState<Login>
         final data = jsonDecode(response.body);
         final userData = data['user'];
         final token = data['token'];
-        
+
         // Créer un objet User à partir des données
         final user = User.fromJson(userData);
 
         // Mettre à jour l'état d'authentification
         await ref.read(authProvider.notifier).login(
-          user: user,
-          accessToken: token,
-        );
+              user: user,
+              accessToken: token,
+            );
 
-     
         // Stocker le token dans SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('authToken', token);
@@ -96,14 +135,10 @@ class _LoginState extends ConsumerState<Login>
       } else {
         // Handle error response
         final error = jsonDecode(response.body)['message'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur: $error')),
-        );
+        await _showErrorDialog('Erreur: $error');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur réseau: $e')),
-      );
+      await _showErrorDialog('Erreur réseau: $e');
     }
   }
 
@@ -141,216 +176,232 @@ class _LoginState extends ConsumerState<Login>
           // Contenu principal
           SafeArea(
             child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: FadeTransition(
-                  opacity: _fadeAnimation,
-                  child: SlideTransition(
-                    position: _slideAnimation,
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.85),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 15,
-                            spreadRadius: 5,
-                          ),
-                        ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Logo ou icône
-                          Container(
-                            child: Image.asset(
-                              'assets/images/logo.png',
-                              height: 120,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
+                      child: IntrinsicHeight(
+                        child: FadeTransition(
+                          opacity: _fadeAnimation,
+                          child: SlideTransition(
+                            position: _slideAnimation,
+                            child: Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 10,
+                                    offset: Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Logo ou icône
+                                  Container(
+                                    child: Image.asset(
+                                      'assets/images/logo.png',
+                                      height: 120,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
 
-                          // Titre
-                          const Text(
-                            'Connexion',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          const SizedBox(height: 32),
+                                  // Titre
+                                  const Text(
+                                    'Connexion',
+                                    style: TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 32),
 
-                          // Formulaire
-                          Form(
-                            key: _formKey,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Champ email
-                                _buildAnimatedTextField(
-                                  controller: _emailController,
-                                  hintText: 'Email',
-                                  prefixIcon: Icons.email_outlined,
-                                  keyboardType: TextInputType.emailAddress,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'Veuillez entrer votre email';
-                                    }
-                                    if (!value.contains('@')) {
-                                      return 'Veuillez entrer un email valide';
-                                    }
-                                    return null;
-                                  },
-                                  delayFactor: 1,
-                                ),
-                                const SizedBox(height: 20),
+                                  // Formulaire
+                                  Form(
+                                    key: _formKey,
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.stretch,
+                                      children: [
+                                        // Champ email
+                                        _buildAnimatedTextField(
+                                          controller: _emailController,
+                                          hintText: 'Email',
+                                          prefixIcon: Icons.email_outlined,
+                                          keyboardType:
+                                              TextInputType.emailAddress,
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'Veuillez entrer votre email';
+                                            }
+                                            if (!value.contains('@')) {
+                                              return 'Veuillez entrer un email valide';
+                                            }
+                                            return null;
+                                          },
+                                          delayFactor: 1,
+                                        ),
+                                        const SizedBox(height: 20),
 
-                                // Champ mot de passe
-                                _buildPasswordField(
-                                  controller: _passwordController,
-                                  hintText: 'Mot de passe',
-                                  delayFactor: 2,
-                                ),
-                                const SizedBox(height: 12),
+                                        // Champ mot de passe
+                                        _buildPasswordField(
+                                          controller: _passwordController,
+                                          hintText: 'Mot de passe',
+                                          delayFactor: 2,
+                                        ),
+                                        const SizedBox(height: 12),
 
-                                // Options de connexion
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    // Option Se souvenir de moi
-                                    Consumer(
-                                      builder: (context, ref, _) {
-                                        final rememberMe = ref.watch(rememberMeProvider);
-                                        return Row(
+                                        // Options de connexion
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
-                                            SizedBox(
-                                              height: 24,
-                                              width: 24,
-                                              child: Checkbox(
-                                                value: rememberMe,
-                                                onChanged: (value) {
-                                                  ref.read(rememberMeProvider.notifier).state = value!;
+                                            // Option Se souvenir de moi
+                                            Flexible(
+                                              child: Consumer(
+                                                builder: (context, ref, _) {
+                                                  final rememberMe = ref.watch(
+                                                      rememberMeProvider);
+                                                  return Row(
+                                                    mainAxisSize:
+                                                        MainAxisSize.min,
+                                                    children: [
+                                                      SizedBox(
+                                                        height: 24,
+                                                        width: 24,
+                                                        child: Checkbox(
+                                                          value: rememberMe,
+                                                          onChanged: (value) {
+                                                            ref
+                                                                .read(rememberMeProvider
+                                                                    .notifier)
+                                                                .state = value!;
+                                                          },
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        4),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      const SizedBox(width: 8),
+                                                      Flexible(
+                                                        child: Text(
+                                                          'Se souvenir de moi',
+                                                          style: TextStyle(
+                                                            color:
+                                                                Colors.black54,
+                                                            fontSize: 13,
+                                                          ),
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  );
                                                 },
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius: BorderRadius.circular(4),
+                                              ),
+                                            ),
+
+                                            // Mot de passe oublié
+                                            
+                                          ],
+                                        ),
+                                        const SizedBox(height: 32),
+
+                                        // Bouton de connexion
+                                        _buildDelayedAnimation(
+                                          child: ElevatedButton(
+                                            onPressed: () async {
+                                              await _handleLogin();
+                                            },
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color(0xFF2EE59D),
+                                              foregroundColor: Colors.white,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 16),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(30),
+                                              ),
+                                              elevation: 3,
+                                              shadowColor:
+                                                  const Color(0xFF2EE59D)
+                                                      .withOpacity(0.5),
+                                            ),
+                                            child: const Text(
+                                              'Se connecter',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          delayFactor: 4,
+                                        ),
+                                        const SizedBox(height: 24),
+
+                                        // Option d'inscription
+                                        _buildDelayedAnimation(
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              const Text(
+                                                "Vous n'avez pas de compte ?",
+                                                style: TextStyle(
+                                                  color: Colors.black54,
                                                 ),
                                               ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              'Se souvenir de moi',
-                                              style: TextStyle(
-                                                color: Colors.black54,
-                                                fontSize: 14,
+                                              TextButton(
+                                                onPressed: () {
+                                                  // Navigation vers la page d'inscription
+
+                                                  // Navigation vers la page d'accueil après validation du formulaire
+                                                  Navigator.pushReplacement(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              const SignUp()));
+                                                },
+                                                child: const Text(
+                                                  "S'inscrire",
+                                                  style: TextStyle(
+                                                    color: Colors.blue,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-
-                                    // Mot de passe oublié
-                                    _buildDelayedAnimation(
-                                      child: TextButton(
-                                        onPressed: () {
-                                          // TODO: Navigation vers la page de récupération de mot de passe
-                                        },
-                                        style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero,
-                                          minimumSize: const Size(10, 10),
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                        ),
-                                        child: const Text(
-                                          'Mot de passe oublié ?',
-                                          style: TextStyle(
-                                            color: Colors.blue,
-                                            fontWeight: FontWeight.w500,
+                                            ],
                                           ),
+                                          delayFactor: 5,
                                         ),
-                                      ),
-                                      delayFactor: 3,
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 32),
-
-                                // Bouton de connexion
-                                _buildDelayedAnimation(
-                                  child: ElevatedButton(
-                                    onPressed: () async {
-                                      await _handleLogin();
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF2EE59D),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 16),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(30),
-                                      ),
-                                      elevation: 3,
-                                      shadowColor: const Color(0xFF2EE59D)
-                                          .withOpacity(0.5),
-                                    ),
-                                    child: const Text(
-                                      'Se connecter',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                      ],
                                     ),
                                   ),
-                                  delayFactor: 4,
-                                ),
-                                const SizedBox(height: 24),
-
-                                // Option d'inscription
-                                _buildDelayedAnimation(
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Text(
-                                        "Vous n'avez pas de compte ?",
-                                        style: TextStyle(
-                                          color: Colors.black54,
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          // Navigation vers la page d'inscription
-
-                                          // Navigation vers la page d'accueil après validation du formulaire
-                                          Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (context) =>
-                                                      const SignUp()));
-                                        },
-                                        child: const Text(
-                                          "S'inscrire",
-                                          style: TextStyle(
-                                            color: Colors.blue,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  delayFactor: 5,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
             ),
           ),
@@ -453,7 +504,8 @@ class _LoginState extends ConsumerState<Login>
             ),
             filled: true,
             fillColor: Colors.grey.shade100,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -464,7 +516,8 @@ class _LoginState extends ConsumerState<Login>
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
+              borderSide:
+                  BorderSide(color: Theme.of(context).primaryColor, width: 1.5),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

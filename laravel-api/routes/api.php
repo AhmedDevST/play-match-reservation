@@ -133,3 +133,12 @@ Route::middleware('auth:sanctum')->group(function () {
 //invitations
 
 Route::post('/invitations', [InvitationController::class, 'store']);
+
+
+Route::get('/users/available', [UserController::class, 'getAvailableUsers'])->middleware('auth:sanctum');
+
+
+Route::post('/invitations/send',[InvitationController::class, 'sendFriendInvitation'])->middleware('auth:sanctum');
+
+// get user fri
+Route::get('/users/friends', [UserController::class, 'getFriends'])->middleware('auth:sanctum');

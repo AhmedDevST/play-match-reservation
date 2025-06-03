@@ -66,6 +66,9 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
                   'id': user['id'],
                   'name': user['username'],
                   'avatar': user['profile_picture'],
+                  'fullImagePath': user['profile_picture'] != null 
+                      ? 'http://localhost:8000/storage/${user['profile_picture']}'
+                      : null,
                 })
             .toList();
       });
@@ -112,6 +115,12 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
                   'name': friend['username'],
                   'email': friend['email'],
                   'avatar': friend['profile_picture'],
+                  'isOnline': friend['is_online'] ?? false,
+                  'status': friend['status'] ?? 'En ligne',
+                  'lastSeen': friend['last_seen'] ?? 'Dernière connexion inconnue',
+                  'sports': (friend['sports'] as List<dynamic>? ?? [])
+                      .map((sport) => sport.toString())
+                      .toList(),
                 })
             .toList();
         _filteredFriends = List.from(_friendsList);
@@ -279,6 +288,13 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
 
   // Carte d'ami
   Widget _buildFriendCard(Map<String, dynamic> friend) {
+    final bool isOnline = friend['isOnline'] as bool? ?? false;
+    final String status = friend['status'] as String? ?? 'Hors ligne';
+    final String lastSeen = friend['lastSeen'] as String? ?? 'Dernière connexion inconnue';
+    final List<String> sports = (friend['sports'] as List<dynamic>? ?? [])
+        .map((sport) => sport.toString())
+        .toList();
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -302,7 +318,9 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.grey.shade300,
+                  color: isOnline
+                      ? const Color(0xFF2EE59D)
+                      : Colors.grey.shade300,
                   width: 2,
                 ),
               ),
@@ -318,7 +336,23 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
                 ),
               ),
             ),
-           
+            if (isOnline)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 15,
+                  height: 15,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2EE59D),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
         title: Text(
@@ -328,6 +362,40 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
             fontSize: 16,
             color: Colors.grey.shade800,
           ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              isOnline ? status : lastSeen,
+              style: TextStyle(
+                color: isOnline ? const Color(0xFF2EE59D) : Colors.grey,
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 4),
+            if (sports.isNotEmpty)
+              Wrap(
+                spacing: 4,
+                children: sports.map((sport) {
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E88E5).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      sport,
+                      style: const TextStyle(
+                        color: Color(0xFF1E88E5),
+                        fontSize: 10,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+          ],
         ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -586,7 +654,10 @@ class _NetworkPageState extends ConsumerState<NetworkPage>
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1E88E5),
               ),
-              child: const Text("Ajouter"),
+              child: const Text(
+                "Ajouter",
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ],
         );
