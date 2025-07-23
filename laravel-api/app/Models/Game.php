@@ -3,12 +3,10 @@
 namespace App\Models;
 
 use App\Enums\MatchStatus;
+use App\Enums\MatchType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Game  extends Model
 {
@@ -38,5 +36,13 @@ class Game  extends Model
     public function invitations()
     {
         return $this->morphMany(Invitation::class, 'invitable');
+    }
+
+    public function scopePublicPendingMatches($query)
+    {
+        return $query->where([
+            ['type', '=', MatchType::PUBLIC->value],
+            ['status', '=', MatchStatus::PENDING]
+        ]);
     }
 }

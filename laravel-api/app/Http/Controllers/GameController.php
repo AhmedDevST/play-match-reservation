@@ -53,4 +53,30 @@ class GameController extends Controller
             'time_slot' => new TimeSlotInstanceResource($game->reservation->timeSlotInstance),
         ]);
     }
+
+    public function getPublicPendingMatches()
+    {
+        try {
+            $matches = Game::publicPendingMatches()
+                ->with([
+                    'teamMatches.team.players',
+                    'teamMatches.team.sport',
+                    'reservation.TimeSlotInstance.recurringTimeSlot.sportFacility'
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'matches' => GameResource::collection($matches),
+                'message' => 'Public pending matches retrieved successfully',
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to retrieve public pending matches',
+                'success' => false
+            ], 500);
+        }
+    }
+
 }

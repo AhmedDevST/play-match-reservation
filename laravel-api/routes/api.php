@@ -38,6 +38,11 @@ Route::get('/sport-facilities', [SportFacilityController::class, 'index']);
 Route::get('/sport-facilities/{facilityId}/available-time-slots', [TimeSlotInstanceController::class, 'getAvailableTimeSlots']);
 Route::get('/sport-facilities/{facilityId}/init-time-slots', [TimeSlotInstanceController::class, 'initTimeSlotInstances']);
 
+
+// Get public pending matches
+ Route::get('/games/public-pending', [GameController::class, 'getPublicPendingMatches']);
+
+
 //init match
 Route::get('/games/{game}', [GameController::class, 'show']);
 
@@ -114,6 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //games
     Route::get('/sport-facilities/{facilityId}/init-game', [GameController::class, 'initGame']);
+
 
     //update staus invitation
     Route::patch('/invitations/{id}/status', [InvitationController::class, 'updateStatus']);

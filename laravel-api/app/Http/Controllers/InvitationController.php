@@ -12,9 +12,13 @@ use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\Auth;
 
 use App\Enums\NotificationType;
+use App\Services\FacilityValidationService;
+use App\Services\NotificationService;
+use App\Services\TeamValidationService;
 
 class InvitationController extends Controller
 {
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -46,59 +50,59 @@ class InvitationController extends Controller
         }
     }
 
-  public function store(Request $request)
-{
-    $validated = $request->validate([
-        'type' => ['required', new Enum(TypeInvitation::class)],
-        'invitable_id' => ['nullable', 'integer'],
-        'sender_id' => ['required', 'integer', 'exists:users,id'],
-        'receiver_id' => ['required', 'integer', 'exists:users,id'],
-    ]);
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'type' => ['required', new Enum(TypeInvitation::class)],
+            'invitable_id' => ['nullable', 'integer'],
+            'sender_id' => ['required', 'integer', 'exists:users,id'],
+            'receiver_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
 
-    try {
-        //ivitation of match
-        //send should be  a captain of team of the sport of the same theam of reciever in match
-        //test is captain of team
-        //test the validation coutn players of the team sender
-        $type = TypeInvitation::from($validated['type']);
+        try {
+            //ivitation of match
+            //send should be  a captain of team of the sport of the same theam of reciever in match
+            //test is captain of team
+            //test the validation coutn players of the team sender
+            $type = TypeInvitation::from($validated['type']);
 
-        $invitableType = match ($type) {
-            TypeInvitation::MATCH => \App\Models\Game::class,
-            TypeInvitation::TEAM => \App\Models\Team::class,
-            TypeInvitation::FRIEND => null,
-        };
+            $invitableType = match ($type) {
+                TypeInvitation::MATCH => \App\Models\Game::class,
+                TypeInvitation::TEAM => \App\Models\Team::class,
+                TypeInvitation::FRIEND => null,
+            };
 
-        $invitationData = [
-            'type' => $type,
-            'sender_id' => $validated['sender_id'],
-            'receiver_id' => $validated['receiver_id'],
-            'status' => InvitationStatus::PENDING,
-        ];
+            $invitationData = [
+                'type' => $type,
+                'sender_id' => $validated['sender_id'],
+                'receiver_id' => $validated['receiver_id'],
+                'status' => InvitationStatus::PENDING,
+            ];
 
-        // Only set morph data if applicable
-        if ($invitableType && !empty($validated['invitable_id'])) {
-            $invitationData['invitable_type'] = $invitableType;
-            $invitationData['invitable_id'] = $validated['invitable_id'];
+            // Only set morph data if applicable
+            if ($invitableType && !empty($validated['invitable_id'])) {
+                $invitationData['invitable_type'] = $invitableType;
+                $invitationData['invitable_id'] = $validated['invitable_id'];
+            }
+
+
+            $invitation = Invitation::create($invitationData);
+
+            return response()->json([
+                'message' => 'Invitation sent successfully.',
+                'success' => true,
+                'data' => $invitation
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to send invitation.',
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-
-        $invitation = Invitation::create($invitationData);
-
-        return response()->json([
-            'message' => 'Invitation sent successfully.',
-            'success' => true,
-            'data' => $invitation
-        ], 201);
-    } catch (\Exception $e) {
-        return response()->json([
-            'message' => 'Failed to send invitation.',
-            'success' => false,
-            'error' => $e->getMessage()
-        ], 500);
     }
-}
 
-public function sendFriendInvitation(Request $request)
+    public function sendFriendInvitation(Request $request)
     {
         $request->validate([
             'receiver_id' => 'required|exists:users,id',
@@ -124,19 +128,18 @@ public function sendFriendInvitation(Request $request)
             'type' => 'friend',
             'status' => 'pending',
         ]);
-         $notificationController = new \App\Http\Controllers\NotificationController();
-         $notificationController->create(
-             $request->receiver_id,
-             NotificationType::INVITATION_NOTIFICATION,
-             "Invitation d'ami",
-             "Vous avez reçu une invitation  de {$sender->username} pour rejoindre votre réseau",
+        $notificationController = new \App\Http\Controllers\NotificationController();
+        $notificationController->create(
+            $request->receiver_id,
+            NotificationType::INVITATION_NOTIFICATION,
+            "Invitation d'ami",
+            "Vous avez reçu une invitation  de {$sender->username} pour rejoindre votre réseau",
             //  $team->id,
             //  Team::class
             $invitation->id,
             Invitation::class
-         );
+        );
 
         return response()->json(['message' => 'Invitation sent successfully.', 'invitation' => $invitation], 201);
     }
-
 }
