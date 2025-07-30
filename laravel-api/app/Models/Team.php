@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
@@ -54,16 +55,27 @@ class Team extends Model
     {
         return $this->morphMany(Invitation::class, 'invitable');
     }
-      public function players()
+    public function players()
     {
         return $this->belongsToMany(User::class, 'user_team_links')
             ->withPivot('is_captain', 'has_left_team');
     }
-
+    public function currentPlayers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'user_team_links')
+            ->withPivot('is_captain', 'has_left_team', 'start_date', 'end_date', 'leave_reason')
+            ->wherePivot('has_left_team', false);
+    }
     public function captain()
     {
         return $this->hasOne(UserTeamLink::class)
             ->where('is_captain', true)
             ->where('has_left_team', false);
+    }
+    public function getCurrentPlayerCount(): int
+    {
+        return $this->userTeamLinks()
+            ->where('has_left_team', false)
+            ->count();
     }
 }

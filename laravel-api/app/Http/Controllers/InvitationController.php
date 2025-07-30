@@ -12,13 +12,21 @@ use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\Auth;
 
 use App\Enums\NotificationType;
+use App\Exceptions\ValidationException;
+use App\Models\Team;
 use App\Services\FacilityValidationService;
+use App\Services\InvitationService;
 use App\Services\NotificationService;
 use App\Services\TeamValidationService;
 
 class InvitationController extends Controller
 {
 
+    public function __construct(
+        private TeamValidationService $teamValidator,
+        private InvitationService $invitationService,
+        private NotificationService $notificationService,
+    ) {}
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -58,41 +66,14 @@ class InvitationController extends Controller
             'sender_id' => ['required', 'integer', 'exists:users,id'],
             'receiver_id' => ['required', 'integer', 'exists:users,id'],
         ]);
-
+        //test invitation is not duplicat
         try {
-            //ivitation of match
-            //send should be  a captain of team of the sport of the same theam of reciever in match
-            //test is captain of team
-            //test the validation coutn players of the team sender
             $type = TypeInvitation::from($validated['type']);
-
-            $invitableType = match ($type) {
-                TypeInvitation::MATCH => \App\Models\Game::class,
-                TypeInvitation::TEAM => \App\Models\Team::class,
-                TypeInvitation::FRIEND => null,
-            };
-
-            $invitationData = [
-                'type' => $type,
-                'sender_id' => $validated['sender_id'],
-                'receiver_id' => $validated['receiver_id'],
-                'status' => InvitationStatus::PENDING,
-            ];
-
-            // Only set morph data if applicable
-            if ($invitableType && !empty($validated['invitable_id'])) {
-                $invitationData['invitable_type'] = $invitableType;
-                $invitationData['invitable_id'] = $validated['invitable_id'];
+            if ($type === TypeInvitation::MATCH) {
+                return $this->handleMatchInvitation($validated);
             }
-
-
-            $invitation = Invitation::create($invitationData);
-
-            return response()->json([
-                'message' => 'Invitation sent successfully.',
-                'success' => true,
-                'data' => $invitation
-            ], 201);
+            // Handle other invitation types
+            return $this->handleGeneralInvitation($validated);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to send invitation.',
@@ -141,5 +122,59 @@ class InvitationController extends Controller
         );
 
         return response()->json(['message' => 'Invitation sent successfully.', 'invitation' => $invitation], 201);
+    }
+
+    public function handleGeneralInvitation(array $validated)
+    {
+        $invitation = $this->invitationService->createInvitation($validated['type'], $validated['sender_id'], $validated['receiver_id'], $validated['invitable_id']);
+        if ($invitation) {
+            return response()->json([
+                'message' => 'Invitation sent successfully.',
+                'success' => true,
+            ], 201);
+        }
+    }
+    public function handleMatchInvitation(array $validated)
+    {
+        $game = Game::findOrFail($validated['invitable_id']);
+        $sender = User::findOrFail($validated['sender_id']);
+        $receiver = User::findOrFail($validated['receiver_id']);
+
+        // Get receiver's team from the match
+        $receiverTeam = $this->invitationService->getReceiverTeamFromMatch($game, $receiver);
+        if (!$receiverTeam) {
+            return response()->json([
+                'message' => 'Receiver is not part of any team in this match.',
+                'success' => false,
+            ], 403);
+        }
+        // Get sender's captain team in the same sport as receiver's team
+        $senderTeam = $this->invitationService->getSenderCaptainTeamInSameSport($sender, $receiverTeam->sport_id);
+        if (!$senderTeam) {
+            return response()->json([
+                'message' => 'You must be a captain of a team in the same sport to send this invitation.',
+                'success' => false,
+            ], 403);
+        }
+        // Check if sender's team has enough players
+        $errors = $this->teamValidator->validateTeamPlayerCount($senderTeam, 'team1');
+        if (!empty($errors)) {
+            throw new ValidationException($errors);
+        }
+        $invitation = $this->invitationService->createInvitation($validated['type'], $validated['sender_id'], $validated['receiver_id'], $validated['invitable_id']);
+        if ($invitation) {
+            $this->notificationService->create(
+                $validated['sender_id'],
+                NotificationType::INVITATION_NOTIFICATION,
+                'Invitation de match',
+                "Vous avez reçu une invitation pour le  match  contre {$senderTeam->name}.",
+                $invitation->id,
+                Invitation::class
+            );
+            return response()->json([
+                'message' => 'Invitation sent successfully.',
+                'success' => true,
+            ], 201);
+        }
     }
 }

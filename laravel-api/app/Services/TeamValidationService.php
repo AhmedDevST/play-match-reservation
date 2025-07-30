@@ -20,7 +20,24 @@ class TeamValidationService
 
         return $errors;
     }
+    public function validateTeamPlayerCount(Team $team, string $teamLabel): array
+    {
+        $errors = [];
+        $sport = $team->sport;
+        // Count active players (not left the team)
+        $playerCount = $team->getCurrentPlayerCount();
 
+        if ($playerCount < $sport->min_players) {
+            $errors[] = "{$teamLabel} must have at least {$sport->min_players} players (currently has {$playerCount}).";
+        }
+
+        if ($playerCount > $sport->max_players) {
+            $errors[] = "{$teamLabel} cannot have more than {$sport->max_players} players (currently has {$playerCount}).";
+        }
+
+        return $errors;
+    }
+    
     private function validateTeam(Team $team, string $teamLabel): array
     {
         $errors = [];
@@ -35,7 +52,6 @@ class TeamValidationService
         if ($playerCount < $sport->min_players || $playerCount > $sport->max_players) {
             $errors[] = "{$teamLabel} must have between {$sport->min_players} and {$sport->max_players} players.";
         }
-
         return $errors;
     }
 

@@ -66,6 +66,10 @@ class GameController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
+            //ajouter invitation objet au collection
+            // get user auth
+            // get invitation de user auth et match id if exist
+            //use new resource : public match (match + invitation asscoie if exist)
             return response()->json([
                 'matches' => GameResource::collection($matches),
                 'message' => 'Public pending matches retrieved successfully',
@@ -78,5 +82,4 @@ class GameController extends Controller
             ], 500);
         }
     }
-
 }

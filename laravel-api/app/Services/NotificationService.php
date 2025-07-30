@@ -22,7 +22,7 @@ class NotificationService
     }
 
 
-    private function create($userId, $type, $title, $message, $notifiableId = null, $notifiableType = null)
+    public function create($userId, $type, $title, $message, $notifiableId = null, $notifiableType = null)
     {
         $notification = Notification::create([
             'user_id' => $userId,

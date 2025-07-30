@@ -18,11 +18,12 @@ use Illuminate\Support\Facades\DB;
 
 class MatchReservationService
 {
-     public function __construct(
+    public function __construct(
         private TeamValidationService $teamValidator,
         private FacilityValidationService $facilityValidator,
         private NotificationService $notificationService,
-        private ReservationService $reservationService
+        private ReservationService $reservationService,
+        private InvitationService $invitationService
     ) {}
 
     public function createMatchReservation(array $data, int $userId): array
@@ -44,9 +45,16 @@ class MatchReservationService
 
             // Handle private match invitations
             if ($data['match_type'] === MatchType::PRIVATE->value && isset($teams['team2'])) {
-                $this->createMatchInvitation($match, $teams);
+                $invitation = $this->invitationService->createInvitation(
+                    'match',
+                    $teams['team2']->captain->user_id,
+                    $teams['team1']->captain->user_id,
+                    $match->id
+                );
+                if ($invitation) {
+                    $this->notificationService->createMatchInvitationNotification($invitation, $teams);
+                }
             }
-
             return [
                 'match_id' => $match->id,
                 'reservation_id' => $reservation->id
@@ -120,22 +128,4 @@ class MatchReservationService
             'status' => ReservationStatus::PENDING,
         ]);
     }
-
-
-
-    private function createMatchInvitation(Game $match, array $teams): void
-    {
-        $invitation = Invitation::create([
-            'sender_id' => $teams['team1']->captain->user_id,
-            'receiver_id' => $teams['team2']->captain->user_id,
-            'type' => TypeInvitation::MATCH->value,
-            'status' => InvitationStatus::PENDING->value,
-            'invitable_id' => $match->id,
-            'invitable_type' => Game::class,
-        ]);
-
-        $this->notificationService->createMatchInvitationNotification($invitation, $teams);
-    }
-
-
 }
