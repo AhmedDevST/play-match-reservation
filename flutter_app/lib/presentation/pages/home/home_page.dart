@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/presentation/widgets/bottom_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_app/presentation/widgets/match/PublicMatchesCarousel.dart';
+import 'package:flutter_app/presentation/widgets/match/game.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -83,7 +85,46 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
-     final user = ref.watch(currentUserProvider);
+    final matches = [
+      Game(
+        imageUrl:
+            'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400',
+        proposedBy: 'FC United',
+        sport: 'Football',
+        date: DateTime(2024, 8, 12, 18, 0),
+        address: 'City Stadium',
+        teamColor: Colors.blue,
+      ),
+      Game(
+        imageUrl:
+            'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',
+        proposedBy: 'Athletic Club',
+        sport: 'Basketball',
+        date: DateTime(2024, 8, 15, 20, 0),
+        address: 'Sports Complex Arena',
+        teamColor: Colors.orange,
+      ),
+      Game(
+        imageUrl:
+            'https://images.unsplash.com/photo-1552667466-07770ae110d0?w=400',
+        proposedBy: 'Tennis Pro',
+        sport: 'Tennis',
+        date: DateTime(2024, 8, 18, 16, 30),
+        address: 'Tennis Court Center',
+        teamColor: Colors.green,
+      ),
+      Game(
+        imageUrl:
+            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
+        proposedBy: 'Swimming Club',
+        sport: 'Swimming',
+        date: DateTime(2024, 8, 20, 14, 0),
+        address: 'Aquatic Center',
+        teamColor: Colors.teal,
+      ),
+    ];
+
+    final user = ref.watch(currentUserProvider);
     if (user == null) {
       return Scaffold(
         body: Center(
@@ -108,6 +149,15 @@ class _HomePageState extends ConsumerState<HomePage>
                     // Titre de bienvenue
                     _buildWelcomeTitle(),
 
+                    const SizedBox(height: 20),
+                    PublicMatchesCarousel(
+                      matches: matches,
+                      onMatchTap: (match) {
+                        // Handle match tap
+                        print('Tapped on match: ${match.proposedBy}');
+                      },
+                    ),
+                    const SizedBox(height: 40),
                     // Carrousel d'images
                     _buildImageCarousel(),
 
@@ -138,7 +188,8 @@ class _HomePageState extends ConsumerState<HomePage>
                 if (index == 4) {
                   // Handle logout
                   ref.read(authProvider.notifier).logout();
-                  Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+                  Navigator.of(context)
+                      .pushNamedAndRemoveUntil('/', (route) => false);
                 } else if (index == 1) {
                   // Navigate to friends page
                   Navigator.of(context).pushNamed('/friends');
@@ -175,9 +226,8 @@ class _HomePageState extends ConsumerState<HomePage>
               children: [
                 // Avatar and greeting
                 Row(
-                  children:[
-                    
-                       Hero(
+                  children: [
+                    Hero(
                       tag: 'userAvatar',
                       child: GestureDetector(
                         onTap: () async {
@@ -200,7 +250,8 @@ class _HomePageState extends ConsumerState<HomePage>
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(20),
                             // ignore: unnecessary_null_comparison
-                            child: user.fullImagePath != null && user.fullImagePath.isNotEmpty
+                            child: user.fullImagePath != null &&
+                                    user.fullImagePath.isNotEmpty
                                 ? Image.network(
                                     user.fullImagePath,
                                     fit: BoxFit.cover,

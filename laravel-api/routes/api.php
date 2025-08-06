@@ -39,12 +39,8 @@ Route::get('/sport-facilities/{facilityId}/available-time-slots', [TimeSlotInsta
 Route::get('/sport-facilities/{facilityId}/init-time-slots', [TimeSlotInstanceController::class, 'initTimeSlotInstances']);
 
 
-// Get public pending matches
- Route::get('/games/public-pending', [GameController::class, 'getPublicPendingMatches']);
 
 
-//init match
-Route::get('/games/{game}', [GameController::class, 'show']);
 
 
 // team
@@ -119,6 +115,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     //games
     Route::get('/sport-facilities/{facilityId}/init-game', [GameController::class, 'initGame']);
+    // Get public pending matches
+    Route::get('/games/public-pending', [GameController::class, 'getPublicPendingMatches']);
+
 
 
     //update staus invitation
@@ -135,7 +134,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
+//init match
+Route::get('/games/{game}', [GameController::class, 'show']);
 //invitations
 
 Route::post('/invitations', [InvitationController::class, 'store']);
@@ -144,7 +144,7 @@ Route::post('/invitations', [InvitationController::class, 'store']);
 Route::get('/users/available', [UserController::class, 'getAvailableUsers'])->middleware('auth:sanctum');
 
 
-Route::post('/invitations/send',[InvitationController::class, 'sendFriendInvitation'])->middleware('auth:sanctum');
+Route::post('/invitations/send', [InvitationController::class, 'sendFriendInvitation'])->middleware('auth:sanctum');
 
 // get user fri
 Route::get('/users/friends', [UserController::class, 'getFriends'])->middleware('auth:sanctum');

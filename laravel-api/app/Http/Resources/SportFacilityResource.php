@@ -21,7 +21,9 @@ class SportFacilityResource extends JsonResource
             'description' => $this->description,
             'price_per_hour' => $this->price_per_hour,
             'rating' => $this->rating,
-            'sports' => SportResource::collection($this->sports),
+            'sports' => $this->whenLoaded('sports', function () {
+                return SportResource::collection($this->sports);
+            }),
             'images' => SportFacilityImageResource::collection($this->images),
             'primary_image' => Storage::url($this->images->where('is_primary', true)->first()?->path),
         ];

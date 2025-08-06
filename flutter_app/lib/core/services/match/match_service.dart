@@ -1,4 +1,5 @@
 import 'package:flutter_app/core/config/apiConfig.dart';
+import 'package:flutter_app/models/PublicGame.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_app/models/Team.dart';
@@ -61,9 +62,32 @@ Future<GameResponse> fetchGame(int id) async {
   throw Exception("Failed to fetch sport facilities");
 }
 
-void main() async {
-  final game = await fetchGame(15);
-  print(game.game.id);
-  print(game.timeSlot.startTime);
-  print(game.facility.name);
+Future<List<PublicGame>> getPendingPublicGames(String token) async {
+  print("Calling Fetch Game");
+  final url = Uri.parse("$GAME_URL/public-pending");
+  final response = await http.get(
+    url,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    },
+  );
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return (data['matches'] as List)
+        .map((item) => PublicGame.fromJson(item))
+        .toList();
+  }
+  throw Exception("Failed to fetch ");
 }
+
+void main() async {
+  final games = await getPendingPublicGames("38|FPrFX9B0S3OPgHvcA8bCjgKZ9URHmLkAj1SBFypQ6f4ea71c");
+  if (games.isNotEmpty) {
+    print(games[0].game.id);
+    print(games[0].timeSlot.startTime);
+    print(games[0].facility.name);
+  }
+}
+

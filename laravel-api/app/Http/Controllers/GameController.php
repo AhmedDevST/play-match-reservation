@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\GameResource;
+use App\Http\Resources\PublicMatchResource;
 use App\Http\Resources\SportFacilityResource;
 use App\Http\Resources\TeamResource;
 use App\Http\Resources\TimeSlotInstanceResource;
@@ -57,21 +58,36 @@ class GameController extends Controller
     public function getPublicPendingMatches()
     {
         try {
+            $userId = Auth::user()->id ?? null;
+            if (!$userId) {
+                return response()->json([
+                    'message' => 'User not authenticated.',
+                    'success' => false,
+                ], 401);
+            }
+
             $matches = Game::publicPendingMatches()
                 ->with([
                     'teamMatches.team.players',
                     'teamMatches.team.sport',
-                    'reservation.TimeSlotInstance.recurringTimeSlot.sportFacility'
+                    'reservation.TimeSlotInstance.recurringTimeSlot.sportFacility',
+                    'invitations' => function ($query) use ($userId) {
+                        $query->where('sender_id', $userId)
+                            ->where('type', \App\Enums\TypeInvitation::MATCH);
+                    }
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            //ajouter invitation objet au collection
-            // get user auth
-            // get invitation de user auth et match id if exist
-            //use new resource : public match (match + invitation asscoie if exist)
+            // Transform the matches to include invitation information
+            $matchesWithInvitations = $matches->map(function ($match) {
+                $match->invitation = $match->invitations->first();
+                unset($match->invitations); // Remove the invitations array since we only need the single invitation
+                return $match;
+            });
+
             return response()->json([
-                'matches' => GameResource::collection($matches),
+                'matches' => PublicMatchResource::collection($matchesWithInvitations),
                 'message' => 'Public pending matches retrieved successfully',
                 'success' => true
             ]);

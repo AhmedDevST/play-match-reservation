@@ -33,7 +33,7 @@ class SportFacility {
       description: json['description'],
       pricePerHour: double.parse(json['price_per_hour'].toString()),
       rating: double.parse(json['rating'].toString()),
-      sports: json['sports'] != null 
+      sports: (json.containsKey('sports') && json['sports'] != null)
           ? List<Sport>.from(json['sports'].map((x) => Sport.fromJson(x)))
           : null,
       images: json['images'] != null 
