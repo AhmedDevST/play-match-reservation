@@ -120,6 +120,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
 
+
+    //invitations
+    //send invitation
+    Route::post('/invitations', [InvitationController::class, 'store']);
     //update staus invitation
     Route::patch('/invitations/{id}/status', [InvitationController::class, 'updateStatus']);
 
@@ -136,9 +140,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 //init match
 Route::get('/games/{game}', [GameController::class, 'show']);
-//invitations
 
-Route::post('/invitations', [InvitationController::class, 'store']);
 
 
 Route::get('/users/available', [UserController::class, 'getAvailableUsers'])->middleware('auth:sanctum');

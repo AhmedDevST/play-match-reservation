@@ -31,7 +31,7 @@ class PublicMatchResource extends JsonResource
                     return $this->reservation->TimeSlotInstance;
                 })
             ),
-         // 'invitation' => $this->invitation ? new InvitationResource($this->invitation) : null,
+          'invitation' => $this->invitation ? new InvitationResource($this->invitation) : null,
         ];
     }
 }

@@ -79,6 +79,32 @@ class Invitation implements NotifiableObject {
       'invitable': invitable?.toJson(),
     };
   }
+
+  Invitation copyWith({
+    int? id,
+    User? sender,
+    User? receiver,
+    InvitationType? type,
+    InvitationStatus? status,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? invitableType,
+    int? invitableId,
+    InvitableObject? invitable,
+  }) {
+    return Invitation(
+      id: id ?? this.id,
+      sender: sender ?? this.sender,
+      receiver: receiver ?? this.receiver,
+      type: type ?? this.type,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      invitableType: invitableType ?? this.invitableType,
+      invitableId: invitableId ?? this.invitableId,
+      invitable: invitable ?? this.invitable,
+    );
+  }
 }
 
 // Classe abstraite pour les objets notifiables

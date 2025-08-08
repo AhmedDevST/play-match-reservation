@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_app/models/PublicGame.dart';
 import 'package:intl/intl.dart';
 import 'package:image_network/image_network.dart';
-
-
-// ...imports identiques
+import 'package:flutter_app/Utility/StatusColorUtil.dart';
 
 class CardListPublicMatch extends StatefulWidget {
   final PublicGame match;
   final VoidCallback? onTap;
+  final Future<void> Function() sendInvitation;
 
   const CardListPublicMatch({
     Key? key,
     required this.match,
     this.onTap,
+    required this.sendInvitation,
   }) : super(key: key);
 
   @override
@@ -22,17 +22,23 @@ class CardListPublicMatch extends StatefulWidget {
 
 class _CardListPublicMatchState extends State<CardListPublicMatch> {
   bool _isSending = false;
+  late bool _isLoading;
 
-  Future<void> _sendInvitation() async {
-    setState(() {
-      _isSending = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _isLoading = false;
+    _isSending = widget.match.invitation != null;
+  }
 
-    await Future.delayed(const Duration(seconds: 1));
-
-    setState(() {
-      _isSending = false;
-    });
+  @override
+  void didUpdateWidget(covariant CardListPublicMatch oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.match.invitation != widget.match.invitation) {
+      setState(() {
+        _isSending = widget.match.invitation != null;
+      });
+    }
   }
 
   @override
@@ -40,9 +46,9 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
     final match = widget.match;
     final startTime = match.timeSlot.startTime;
     final endTime = match.timeSlot.endTime;
-
-    return 
-    GestureDetector(
+    final statusInvitation = match.invitation?.status.name ?? 'pending';
+    final Color statusColor = StatusColorUtil.getStatusColor(statusInvitation);
+    return GestureDetector(
       onTap: widget.onTap,
       child: Container(
         decoration: BoxDecoration(
@@ -110,7 +116,8 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
             // ✅ Content
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -143,7 +150,8 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
                     // ✅ Date + Time
                     Row(
                       children: [
-                        Icon(Icons.access_time, size: 12, color: Colors.grey[600]),
+                        Icon(Icons.access_time,
+                            size: 12, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Text(
                           "${DateFormat('E d MMM yyyy').format(match.timeSlot.date)} | $startTime - $endTime",
@@ -161,7 +169,8 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
                     // Address
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 12, color: Colors.grey[600]),
+                        Icon(Icons.location_on,
+                            size: 12, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -191,25 +200,25 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
                 child: _isSending
                     ? Container(
                         decoration: BoxDecoration(
-                          color: Colors.green.withOpacity(0.1),
+                          color: statusColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(
-                            color: Colors.green.withOpacity(0.3),
+                            color: statusColor.withOpacity(0.3),
                             width: 1,
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.check, size: 12, color: Colors.green),
-                              SizedBox(width: 3),
+                              Icon(Icons.check, size: 12, color: statusColor),
+                              const SizedBox(width: 3),
                               Text(
-                                'Sent',
+                                statusInvitation,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.green,
+                                  color: statusColor,
                                 ),
                               ),
                             ],
@@ -217,7 +226,17 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
                         ),
                       )
                     : ElevatedButton(
-                        onPressed: _isSending ? null : _sendInvitation,
+                        onPressed: _isSending
+                            ? null
+                            : () async {
+                                setState(() => _isLoading = true);
+
+                                try {
+                                  await widget.sendInvitation.call();
+                                } finally {
+                                  setState(() => _isLoading = false);
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,
                           foregroundColor: Colors.white,
@@ -227,13 +246,23 @@ class _CardListPublicMatchState extends State<CardListPublicMatch> {
                           ),
                           padding: EdgeInsets.zero,
                         ),
-                        child: const Text(
-                          'Send',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Send',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
               ),
             ),

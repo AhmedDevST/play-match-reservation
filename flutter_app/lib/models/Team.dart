@@ -11,6 +11,15 @@ class Team {
   final Sport sport;
   List<TeamPlayer>? players;
 
+  TeamPlayer? get captain {
+    if (players == null) return null;
+    try {
+      return players!.firstWhere((player) => player.isCaptain);
+    } catch (e) {
+      return null;
+    }
+  }
+
   Team({
     required this.id,
     required this.name,
@@ -51,4 +60,6 @@ class Team {
     if (image == null) return '';
     return "$API_URL$image";
   }
+
+
 }

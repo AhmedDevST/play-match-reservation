@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 
 use App\Enums\NotificationType;
 use App\Exceptions\ValidationException;
+use App\Http\Resources\InvitationResource;
 use App\Models\Team;
 use App\Services\FacilityValidationService;
 use App\Services\InvitationService;
@@ -60,12 +61,19 @@ class InvitationController extends Controller
 
     public function store(Request $request)
     {
+        $userId = Auth::user()->id ?? null;
+        if (!$userId) {
+            return response()->json([
+                'message' => 'User not authenticated.',
+                'success' => false,
+            ], 401);
+        }
         $validated = $request->validate([
             'type' => ['required', new Enum(TypeInvitation::class)],
             'invitable_id' => ['nullable', 'integer'],
-            'sender_id' => ['required', 'integer', 'exists:users,id'],
             'receiver_id' => ['required', 'integer', 'exists:users,id'],
         ]);
+        $validated['sender_id'] = $userId;
         //test invitation is not duplicat
         try {
             $type = TypeInvitation::from($validated['type']);
@@ -140,6 +148,19 @@ class InvitationController extends Controller
         $sender = User::findOrFail($validated['sender_id']);
         $receiver = User::findOrFail($validated['receiver_id']);
 
+        // Check if an invitation already exists
+        $existingInvitation = Invitation::where('sender_id', $sender->id)
+            ->where('receiver_id', $receiver->id)
+            ->where('type', TypeInvitation::MATCH->value)
+            ->where('invitable_id', $game->id)
+            ->first();
+        if ($existingInvitation) {
+            return response()->json([
+                'message' => 'Invitation already sent.',
+                'success' => false,
+            ], 400);
+        }
+
         // Get receiver's team from the match
         $receiverTeam = $this->invitationService->getReceiverTeamFromMatch($game, $receiver);
         if (!$receiverTeam) {
@@ -161,7 +182,7 @@ class InvitationController extends Controller
         if (!empty($errors)) {
             throw new ValidationException($errors);
         }
-        $invitation = $this->invitationService->createInvitation($validated['type'], $validated['sender_id'], $validated['receiver_id'], $validated['invitable_id']);
+        $invitation = $this->invitationService->createInvitation($validated['type'], $validated['receiver_id'], $validated['sender_id'], $validated['invitable_id']);
         if ($invitation) {
             $this->notificationService->create(
                 $validated['sender_id'],
@@ -173,6 +194,7 @@ class InvitationController extends Controller
             );
             return response()->json([
                 'message' => 'Invitation sent successfully.',
+                'invitation' => new InvitationResource($invitation),
                 'success' => true,
             ], 201);
         }

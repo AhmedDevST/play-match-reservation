@@ -83,11 +83,12 @@ Future<List<PublicGame>> getPendingPublicGames(String token) async {
 }
 
 void main() async {
-  final games = await getPendingPublicGames("38|FPrFX9B0S3OPgHvcA8bCjgKZ9URHmLkAj1SBFypQ6f4ea71c");
+  final games = await getPendingPublicGames("42|wyV8mzN5TpoMuJvC9p0jAC21Um9atzsvoAmMME0r2352a765");
   if (games.isNotEmpty) {
     print(games[0].game.id);
     print(games[0].timeSlot.startTime);
     print(games[0].facility.name);
+    print(games[0].invitation?.id);
   }
 }
 
