@@ -10,13 +10,16 @@ use App\Http\Resources\TimeSlotInstanceResource;
 use App\Models\Game;
 use App\Models\SportFacility;
 use App\Models\User;
+use App\Services\GameService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class GameController extends Controller
 {
 
-
+    public function __construct(
+        private GameService $gameService,
+    ) {}
     public function initGame(Request $request, $facilityId)
     {
         // Step 1: Check if the user is authenticated
@@ -55,46 +58,28 @@ class GameController extends Controller
         ]);
     }
 
-    public function getPublicPendingMatches()
+    public function getPublicPendingMatches(Request $request)
     {
         try {
-            $userId = Auth::user()->id ?? null;
+            $userId = Auth::id();
             if (!$userId) {
                 return response()->json([
                     'message' => 'User not authenticated.',
                     'success' => false,
                 ], 401);
             }
-
-            $matches = Game::publicPendingMatches()
-                ->with([
-                    'teamMatches.team.players',
-                    'teamMatches.team.sport',
-                    'reservation.TimeSlotInstance.recurringTimeSlot.sportFacility',
-                    'invitations' => function ($query) use ($userId) {
-                        $query->where('sender_id', $userId)
-                            ->where('type', \App\Enums\TypeInvitation::MATCH);
-                    }
-                ])
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            // Transform the matches to include invitation information
-            $matchesWithInvitations = $matches->map(function ($match) {
-                $match->invitation = $match->invitations->first();
-                unset($match->invitations); // Remove the invitations array since we only need the single invitation
-                return $match;
-            });
+           // $limit = $request->query('limit'); // get ?limit=10 from URL, null if not provided
+            $matches = $this->gameService->getPublicPendingMatches($userId);
 
             return response()->json([
-                'matches' => PublicMatchResource::collection($matchesWithInvitations),
+                'matches' => PublicMatchResource::collection($matches),
                 'message' => 'Public pending matches retrieved successfully',
-                'success' => true
+                'success' => true,
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to retrieve public pending matches',
-                'success' => false
+                'success' => false,
             ], 500);
         }
     }

@@ -36,4 +36,11 @@ class NotificationService
 
         return $notification;
     }
+
+    public function countNotifications($userId): int
+    {
+        return Notification::where('user_id', $userId)
+            ->where('is_read', false)
+            ->count();
+    }
 }

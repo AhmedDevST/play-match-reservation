@@ -12,6 +12,7 @@ use App\Http\Controllers\Invitations\TeamInvitationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\UserController;
 
@@ -90,6 +91,10 @@ Route::get('/users/search', [UserController::class, 'search']);
 Route::get('/users', [UserController::class, 'index']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    // Home route
+    Route::get('/home', [HomeController::class, 'index']);
+
+
     // Routes pour les invitations d'équipe
     Route::prefix('teams/invitations')->group(function () {
         Route::post('/send', [App\Http\Controllers\Invitations\TeamInvitationController::class, 'send']);

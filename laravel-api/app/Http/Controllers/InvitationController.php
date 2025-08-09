@@ -185,7 +185,7 @@ class InvitationController extends Controller
         $invitation = $this->invitationService->createInvitation($validated['type'], $validated['receiver_id'], $validated['sender_id'], $validated['invitable_id']);
         if ($invitation) {
             $this->notificationService->create(
-                $validated['sender_id'],
+                $validated['receiver_id'],
                 NotificationType::INVITATION_NOTIFICATION,
                 'Invitation de match',
                 "Vous avez reçu une invitation pour le  match  contre {$senderTeam->name}.",

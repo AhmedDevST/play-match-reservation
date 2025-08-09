@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
-import 'game.dart';
+import 'package:flutter_app/Utility/StatusColorUtil.dart';
+import 'package:flutter_app/models/PublicGame.dart';
+import 'package:image_network/image_network.dart';
+import 'package:intl/intl.dart';
+
 class PublicMatchCard extends StatefulWidget {
-  final Game match;
+  final PublicGame match;
+  final Future<void> Function() sendInvitation;
   final VoidCallback? onTap;
 
   const PublicMatchCard({
     Key? key,
     required this.match,
+    required this.sendInvitation,
     this.onTap,
   }) : super(key: key);
 
@@ -16,23 +22,32 @@ class PublicMatchCard extends StatefulWidget {
 
 class _PublicMatchCardState extends State<PublicMatchCard> {
   bool _isSending = false;
+  late bool _isLoading;
 
-  Future<void> _sendInvitation() async {
-    setState(() {
-      _isSending = true;
-    });
-    
-    // Simulate sending invitation
-    await Future.delayed(const Duration(seconds: 1));
-    
-    setState(() {
-      _isSending = false;
-      widget.match.isInvitationSent = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _isLoading = false;
+    _isSending = widget.match.invitation != null;
+  }
+
+  @override
+  void didUpdateWidget(covariant PublicMatchCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.match.invitation != widget.match.invitation) {
+      setState(() {
+        _isSending = widget.match.invitation != null;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final match = widget.match;
+    final startTime = match.timeSlot.startTime;
+    final endTime = match.timeSlot.endTime;
+    final statusInvitation = match.invitation?.status.name ?? 'pending';
+    final Color statusColor = StatusColorUtil.getStatusColor(statusInvitation);
     final screenWidth = MediaQuery.of(context).size.width;
     return GestureDetector(
       onTap: widget.onTap,
@@ -54,60 +69,70 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image container with gradient overlay and content
+            // Image with overlay, button, and info
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
+              child: SizedBox(
+                height: 200, // fixed height
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  image: DecorationImage(
-                    image: NetworkImage(widget.match.imageUrl),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.7),
-                      ],
-                      stops: const [0.6, 1.0],
-                    ),
-                  ),
                   child: Stack(
                     children: [
-                      // Send invitation button (top right)
+                      // ImageNetwork for the background image
+                      ImageNetwork(
+                        image: match.facility.fullImagePath,
+                        height: 200,
+                        width: screenWidth,
+                        fitWeb: BoxFitWeb.cover,
+                        fitAndroidIos: BoxFit.cover,
+                        onLoading: const Center(
+                          child: CircularProgressIndicator(),
+                        ),
+                        onError: const Center(child: Icon(Icons.broken_image)),
+                      ),
+
+                      // Gradient overlay
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.7),
+                            ],
+                            stops: const [0.6, 1.0],
+                          ),
+                        ),
+                      ),
+
+                      // Button on top right
                       Positioned(
                         top: 12,
                         right: 12,
                         child: SizedBox(
                           height: 28,
-                          child: widget.match.isInvitationSent
+                          child: _isSending
                               ? Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 10,
                                     vertical: 6,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.green,
+                                    color: statusColor,
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
+                                      const Icon(
                                         Icons.check,
                                         size: 12,
                                         color: Colors.white,
                                       ),
-                                      SizedBox(width: 4),
+                                      const SizedBox(width: 4),
                                       Text(
-                                        'Sent',
-                                        style: TextStyle(
+                                        statusInvitation,
+                                        style: const TextStyle(
                                           fontSize: 10,
                                           fontWeight: FontWeight.w600,
                                           color: Colors.white,
@@ -117,28 +142,35 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                                   ),
                                 )
                               : ElevatedButton(
-                                  onPressed: _isSending ? null : _sendInvitation,
+                                  onPressed: _isSending
+                                      ? null
+                                      : () async {
+                                          setState(() => _isLoading = true);
+
+                                          try {
+                                            await widget.sendInvitation.call();
+                                          } finally {
+                                            setState(() => _isLoading = false);
+                                          }
+                                        },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: widget.match.teamColor ?? Colors.blue,
+                                    backgroundColor: Colors.blue,
                                     foregroundColor: Colors.white,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(6),
                                     ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 6,
-                                    ),
+                                    padding: EdgeInsets.zero,
                                   ),
-                                  child: _isSending
+                                  child: _isLoading
                                       ? const SizedBox(
-                                          height: 12,
-                                          width: 12,
+                                          width: 14,
+                                          height: 14,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
                                           ),
                                         )
                                       : const Text(
@@ -151,8 +183,8 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                                 ),
                         ),
                       ),
-                      
-                      // Sport badge (top left)
+
+                      // Sport badge top left
                       Positioned(
                         top: 12,
                         left: 12,
@@ -162,11 +194,11 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: (widget.match.teamColor ?? Colors.blue).withOpacity(0.9),
+                            color: Colors.blue.withOpacity(0.9),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            widget.match.sport,
+                            widget.match.game.team1.sport.name,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 10,
@@ -175,8 +207,8 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                           ),
                         ),
                       ),
-                      
-                      // Information at bottom
+
+                      // Bottom info (team name, date, address)
                       Positioned(
                         bottom: 12,
                         left: 12,
@@ -184,9 +216,9 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Team name
+                            // Team name / proposed by
                             Text(
-                              widget.match.proposedBy,
+                              widget.match.game.team1.name,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
@@ -195,9 +227,9 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            
+
                             const SizedBox(height: 4),
-                            
+
                             // Date and time
                             Row(
                               children: [
@@ -208,7 +240,7 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  _formatDate(widget.match.date),
+                                  "${DateFormat('E d MMM yyyy').format(match.timeSlot.date)} | $startTime - $endTime",
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: Colors.white.withOpacity(0.9),
@@ -217,9 +249,9 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 2),
-                            
+
                             // Address
                             Row(
                               children: [
@@ -231,7 +263,7 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    widget.match.address,
+                                    widget.match.facility.address,
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: Colors.white.withOpacity(0.9),
@@ -255,17 +287,5 @@ class _PublicMatchCardState extends State<PublicMatchCard> {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    
-    final hour = date.hour.toString().padLeft(2, '0');
-    final minute = date.minute.toString().padLeft(2, '0');
-    
-    return '${months[date.month - 1]} ${date.day}, $hour:$minute';
   }
 }

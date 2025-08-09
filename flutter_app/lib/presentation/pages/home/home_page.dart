@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_app/models/PublicGame.dart';
 import 'package:flutter_app/models/user.dart';
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,7 +7,8 @@ import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/presentation/widgets/bottom_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_app/presentation/widgets/match/PublicMatchesCarousel.dart';
-import 'package:flutter_app/presentation/widgets/match/game.dart';
+import 'package:flutter_app/core/services/home/home_service.dart';
+import 'package:flutter_app/presentation/widgets/common/loading_content.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -20,11 +22,13 @@ class _HomePageState extends ConsumerState<HomePage>
   // Pour les animations
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-
+  bool isLoading = false;
   // Pour le carrousel d'images
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
+  // Pour stocker les jeux publics chargés
+  late List<PublicGame> publicGames = [];
+  int notificationCount = 0;
   // Exemple d'images pour le carrousel
   final List<String> _imageList = [
     'assets/images/background.png',
@@ -73,6 +77,31 @@ class _HomePageState extends ConsumerState<HomePage>
         );
       }
     });
+
+    // Charger les données de la page d'accueil
+    loadHomeData();
+  }
+
+  Future<void> loadHomeData() async {
+    setState(() {
+      isLoading = true;
+    });
+    final authState = ref.read(authProvider);
+    final token = authState.accessToken;
+    if (token != null) {
+      final DataResponse = await loadHome(token);
+      setState(() {
+        isLoading = false;
+        publicGames = DataResponse.publicGames;
+        notificationCount = DataResponse.notifications_count;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+      print("User is not logged in.");
+      // }
+    }
   }
 
   @override
@@ -85,45 +114,6 @@ class _HomePageState extends ConsumerState<HomePage>
 
   @override
   Widget build(BuildContext context) {
-    final matches = [
-      Game(
-        imageUrl:
-            'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400',
-        proposedBy: 'FC United',
-        sport: 'Football',
-        date: DateTime(2024, 8, 12, 18, 0),
-        address: 'City Stadium',
-        teamColor: Colors.blue,
-      ),
-      Game(
-        imageUrl:
-            'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400',
-        proposedBy: 'Athletic Club',
-        sport: 'Basketball',
-        date: DateTime(2024, 8, 15, 20, 0),
-        address: 'Sports Complex Arena',
-        teamColor: Colors.orange,
-      ),
-      Game(
-        imageUrl:
-            'https://images.unsplash.com/photo-1552667466-07770ae110d0?w=400',
-        proposedBy: 'Tennis Pro',
-        sport: 'Tennis',
-        date: DateTime(2024, 8, 18, 16, 30),
-        address: 'Tennis Court Center',
-        teamColor: Colors.green,
-      ),
-      Game(
-        imageUrl:
-            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
-        proposedBy: 'Swimming Club',
-        sport: 'Swimming',
-        date: DateTime(2024, 8, 20, 14, 0),
-        address: 'Aquatic Center',
-        teamColor: Colors.teal,
-      ),
-    ];
-
     final user = ref.watch(currentUserProvider);
     if (user == null) {
       return Scaffold(
@@ -133,72 +123,74 @@ class _HomePageState extends ConsumerState<HomePage>
       );
     }
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // En-tête avec profil et chat
-            _buildHeader(user: user),
+      body: isLoading
+          ? const LoadingContent(
+              lottieUrl:
+                  "https://lottie.host/53de5d49-207d-4767-af25-9f20f6fb6415/uDd2URAR0g.json",
+            )
+          //const Center(child: CircularProgressIndicator())
+          : SafeArea(
+              child: Column(
+                children: [
+                  // En-tête avec profil et chat
+                  _buildHeader(user: user),
 
-            // Contenu principal
-            Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Column(
-                  children: [
-                    // Titre de bienvenue
-                    _buildWelcomeTitle(),
+                  // Contenu principal
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Column(
+                        children: [
+                          // Titre de bienvenue
+                          _buildWelcomeTitle(),
+                          const SizedBox(height: 20),
+                          PublicMatchesCarousel(
+                            publicGames: publicGames,
+                          ),
+                          const SizedBox(height: 40),
+                          // Carrousel d'images
+                          _buildImageCarousel(),
 
-                    const SizedBox(height: 20),
-                    PublicMatchesCarousel(
-                      matches: matches,
-                      onMatchTap: (match) {
-                        // Handle match tap
-                        print('Tapped on match: ${match.proposedBy}');
-                      },
+                          // Filtres rapides
+                          _buildQuickFilters(),
+
+                          // Statistiques de l'utilisateur
+                          _buildUserStats(),
+
+                          // Section Équipes
+                          _buildTeamsSection(),
+
+                          // Réservations à venir
+                          _buildUpcomingReservations(),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 40),
-                    // Carrousel d'images
-                    _buildImageCarousel(),
+                  ),
 
-                    // Filtres rapides
-                    _buildQuickFilters(),
+                  // Barre de navigation inférieure
+                  BottomNavBar(
+                    notificationCount: notificationCount,
+                    selectedIndex: _selectedIndex,
+                    onItemSelected: (index) {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
 
-                    // Statistiques de l'utilisateur
-                    _buildUserStats(),
-
-                    // Section Équipes
-                    _buildTeamsSection(),
-
-                    // Réservations à venir
-                    _buildUpcomingReservations(),
-                  ],
-                ),
+                      if (index == 4) {
+                        // Handle logout
+                        ref.read(authProvider.notifier).logout();
+                        Navigator.of(context)
+                            .pushNamedAndRemoveUntil('/', (route) => false);
+                      } else if (index == 1) {
+                        // Navigate to friends page
+                        Navigator.of(context).pushNamed('/friends');
+                      }
+                    },
+                  ),
+                ],
               ),
             ),
-
-            // Barre de navigation inférieure
-            BottomNavBar(
-              selectedIndex: _selectedIndex,
-              onItemSelected: (index) {
-                setState(() {
-                  _selectedIndex = index;
-                });
-
-                if (index == 4) {
-                  // Handle logout
-                  ref.read(authProvider.notifier).logout();
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/', (route) => false);
-                } else if (index == 1) {
-                  // Navigate to friends page
-                  Navigator.of(context).pushNamed('/friends');
-                }
-              },
-            ),
-          ],
-        ),
-      ),
     );
   }
 
