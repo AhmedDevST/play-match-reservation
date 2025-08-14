@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use App\Helpers\ApiResponse;
 use App\Http\Requests\CreateReservationRequest;
 use App\Http\Resources\ReservationResource;
 use App\Models\Sport;
@@ -22,25 +24,13 @@ class ReservationController extends Controller
     public function getUserReservations()
     {
         $userId = Auth::user()->id ?? null;
-        if (!$userId) {
-            return response()->json([
-                'message' => 'User not authenticated.',
-                'success' => false,
-            ], 401);
-        }
         $reservations = Reservation::with([
             'TimeSlotInstance.recurringTimeSlot.sportFacility',
             'user',
             'game.teamMatches.team.players',
             'game.teamMatches.team.sport',
         ])->where('user_id', $userId)->get();
-
-
-        return response()->json([
-            'reservations' => ReservationResource::collection($reservations),
-            'message' => 'User reservations retrieved successfully.',
-            'success' => true,
-        ]);
+        return  ApiResponse::success(ReservationResource::collection($reservations), 'User reservations retrieved successfully.', 200);
     }
 
     public function init(Request $request)
@@ -60,55 +50,18 @@ class ReservationController extends Controller
 
     public function store(CreateReservationRequest $request)
     {
+        $userId = Auth::user()->id ?? null;
+        $data = $request->validated();
+        $reservation = null;
         if ($request->is_match) {
-            return $this->createMatchReservation($request);
+            $reservation = $this->matchReservationService->createMatchReservation($data, $userId);
+        } else {
+            $reservation = $this->reservationService->createSimpleReservation($data, $userId);
         }
-        return $this->createSimpleReservation($request);
-    }
-
-    private function createSimpleReservation(CreateReservationRequest $request)
-    {
-        try {
-            $reservation = $this->reservationService->createSimpleReservation(
-                $request->validated(),
-                $request->user()->id
-            );
-            return response()->json([
-                'message' => 'Reservation created successfully.',
-                'success' => true,
-                'data' => ['reservation_id' => $reservation->id]
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Reservation failed.',
-                'success' => false,
-            ], 500);
-        }
-    }
-    private function createMatchReservation(CreateReservationRequest $request)
-    {
-        try {
-            $result = $this->matchReservationService->createMatchReservation(
-                $request->validated(),
-                $request->user()->id
-            );
-
-            return response()->json([
-                'message' => 'Match reservation created successfully.',
-                'success' => true,
-                'data' => $result
-            ], 201);
-        } catch (\App\Exceptions\ValidationException $e) {
-            return response()->json([
-                'errors' => $e->getErrors(),
-                'success' => false,
-                'message' => 'Business validation failed.'
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Match reservation failed.',
-                'success' => false,
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'Reservation created successfully.',
+            'success' => true,
+            'data' => $reservation
+        ], 201);
     }
 }

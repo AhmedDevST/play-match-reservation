@@ -9,7 +9,6 @@ import 'package:flutter_app/presentation/pages/match/details_match.dart';
 import 'package:flutter_app/presentation/widgets/common/loading_content.dart';
 import 'package:flutter_app/core/services/invitation/invitationService.dart';
 import 'package:flutter_app/presentation/widgets/dialog/StatusDialog.dart';
-import 'package:flutter_app/models/Invitation.dart';
 
 class PublicMatchesListView extends ConsumerStatefulWidget {
   const PublicMatchesListView({
@@ -77,7 +76,7 @@ class _PublicMatchesListViewState extends ConsumerState<PublicMatchesListView> {
       // ✅ Update only the invitation status for the current item
       if (result.success) {
         final updatedMatch = PublicMatch.copyWith(
-          invitation: result.invitation,
+          invitation: result.data,
         );
         setState(() {
           publicGames[index] = updatedMatch;

@@ -20,13 +20,11 @@ class ReservationService
                 'total_price' => 0,
                 'status' => ReservationStatus::COMPLETED,
             ]);
-
-          $this->reserveTimeSlot($reservation->timeSlotInstance);
-
+            $this->reserveTimeSlot($reservation->timeSlotInstance);
             return $reservation;
         });
     }
-     public function reserveTimeSlot(TimeSlotInstance $timeSlotInstance): void
+    public function reserveTimeSlot(TimeSlotInstance $timeSlotInstance): void
     {
         $timeSlotInstance->update(['status' => TimeSlotsStatus::RESERVED]);
     }

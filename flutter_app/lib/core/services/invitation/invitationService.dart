@@ -1,9 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_app/core/config/apiConfig.dart';
-import 'package:flutter_app/core/services/response/InvitationResponse.dart';
+import 'package:flutter_app/core/services/response/api_responses.dart';
 import 'package:flutter_app/models/Invitation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_app/core/services/response/ApiResponse.dart';
 const INVITATION_URL = "$API_URL/api/invitations";
 
 Future<bool> respondToInvitation(
@@ -57,17 +56,17 @@ Future<InvitationResponse> sendInvitation(int invitable_id,String type,int recei
     );
      final data = jsonDecode(response.body);
     return InvitationResponse.fromJson(data);
-  } catch (e) {
+ } catch (e) {
     return InvitationResponse(
       success: false,
-      message: 'Failed to parse response',
+      message: 'Failed to parse response $e',
     );
   }
 }
 
 void main() async {
-  final response = await sendInvitation(31,"match",1,"49|JDr6iU1oVEZilaR86fjoLqdB69DtUECoc1lKdainec1dbc70");
-  print('Response: ${response.success}, Message: ${response.message}, Errors: ${response.errors} , Invitation: ${response.invitation?.id}');
- }
+  final response = await sendInvitation(31,"match",1,"60|c49LQv2MunJu1MXKNeVrxrdDvJbvRMae1w8gXGim59c38f87");
+  print('Response: ${response.success}, Message: ${response.message}, Errors: ${response.errors} , Invitation: ${response.data?.id}');
+}
 
 

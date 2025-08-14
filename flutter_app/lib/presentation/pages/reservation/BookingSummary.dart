@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_app/core/services/response/ApiResponse.dart';
+import 'package:flutter_app/core/services/response/api_response.dart';
 import 'package:flutter_app/models/Game.dart';
 import 'package:flutter_app/models/Reservation.dart';
 import 'package:flutter_app/presentation/pages/reservation/MyBooking.dart';

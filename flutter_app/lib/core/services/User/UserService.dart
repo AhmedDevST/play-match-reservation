@@ -73,7 +73,7 @@ Future<List<Reservation>> getReservationOfUser(token) async {
   );
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    return (data['reservations'] as List)
+    return (data['data'] as List)
         .map((item) => Reservation.fromJson(item))
         .toList();
   }

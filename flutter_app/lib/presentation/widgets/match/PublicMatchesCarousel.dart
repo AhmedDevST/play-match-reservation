@@ -66,7 +66,7 @@ class _PublicMatchesCarouselState extends ConsumerState<PublicMatchesCarousel> {
       // ✅ Update only the invitation status for the current item
       if (result.success) {
         final updatedMatch = PublicMatch.copyWith(
-          invitation: result.invitation,
+          invitation: result.data,
         );
         setState(() {
           widget.publicGames[index] = updatedMatch;

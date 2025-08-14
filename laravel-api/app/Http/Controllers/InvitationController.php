@@ -6,27 +6,21 @@ use App\Models\Invitation;
 use Illuminate\Http\Request;
 use App\Enums\InvitationStatus;
 use App\Enums\TypeInvitation;
-use App\Models\Game;
 use App\Models\User;
-use Illuminate\Validation\Rules\Enum;
 use Illuminate\Support\Facades\Auth;
 
 use App\Enums\NotificationType;
-use App\Exceptions\ValidationException;
+use App\Helpers\ApiResponse;
+//use App\Exceptions\ValidationException;
 use App\Http\Resources\InvitationResource;
-use App\Models\Team;
-use App\Services\FacilityValidationService;
 use App\Services\InvitationService;
-use App\Services\NotificationService;
-use App\Services\TeamValidationService;
+use App\Http\Requests\StoreInvitationRequest;
 
 class InvitationController extends Controller
 {
 
     public function __construct(
-        private TeamValidationService $teamValidator,
         private InvitationService $invitationService,
-        private NotificationService $notificationService,
     ) {}
     public function updateStatus(Request $request, $id)
     {
@@ -59,36 +53,19 @@ class InvitationController extends Controller
         }
     }
 
-    public function store(Request $request)
+    public function store(StoreInvitationRequest $request)
     {
         $userId = Auth::user()->id ?? null;
-        if (!$userId) {
-            return response()->json([
-                'message' => 'User not authenticated.',
-                'success' => false,
-            ], 401);
-        }
-        $validated = $request->validate([
-            'type' => ['required', new Enum(TypeInvitation::class)],
-            'invitable_id' => ['nullable', 'integer'],
-            'receiver_id' => ['required', 'integer', 'exists:users,id'],
-        ]);
+        $validated = $request->validated();
         $validated['sender_id'] = $userId;
-        //test invitation is not duplicat
-        try {
-            $type = TypeInvitation::from($validated['type']);
-            if ($type === TypeInvitation::MATCH) {
-                return $this->handleMatchInvitation($validated);
-            }
-            // Handle other invitation types
-            return $this->handleGeneralInvitation($validated);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to send invitation.',
-                'success' => false,
-                'error' => $e->getMessage()
-            ], 500);
+        $type = TypeInvitation::from($validated['type']);
+        $invitation = null;
+        if ($type === TypeInvitation::MATCH) {
+            $invitation = $this->invitationService->handleMatchInvitation($validated);
+        } else {
+            $invitation = $this->invitationService->handleGeneralInvitation($validated);
         }
+        return  ApiResponse::success(new InvitationResource($invitation), 'Invitation sent successfully', 201);
     }
 
     public function sendFriendInvitation(Request $request)
@@ -130,73 +107,5 @@ class InvitationController extends Controller
         );
 
         return response()->json(['message' => 'Invitation sent successfully.', 'invitation' => $invitation], 201);
-    }
-
-    public function handleGeneralInvitation(array $validated)
-    {
-        $invitation = $this->invitationService->createInvitation($validated['type'], $validated['sender_id'], $validated['receiver_id'], $validated['invitable_id']);
-        if ($invitation) {
-            return response()->json([
-                'message' => 'Invitation sent successfully.',
-                'success' => true,
-            ], 201);
-        }
-    }
-    public function handleMatchInvitation(array $validated)
-    {
-        $game = Game::findOrFail($validated['invitable_id']);
-        $sender = User::findOrFail($validated['sender_id']);
-        $receiver = User::findOrFail($validated['receiver_id']);
-
-        // Check if an invitation already exists
-        $existingInvitation = Invitation::where('sender_id', $sender->id)
-            ->where('receiver_id', $receiver->id)
-            ->where('type', TypeInvitation::MATCH->value)
-            ->where('invitable_id', $game->id)
-            ->first();
-        if ($existingInvitation) {
-            return response()->json([
-                'message' => 'Invitation already sent.',
-                'success' => false,
-            ], 400);
-        }
-
-        // Get receiver's team from the match
-        $receiverTeam = $this->invitationService->getReceiverTeamFromMatch($game, $receiver);
-        if (!$receiverTeam) {
-            return response()->json([
-                'message' => 'Receiver is not part of any team in this match.',
-                'success' => false,
-            ], 403);
-        }
-        // Get sender's captain team in the same sport as receiver's team
-        $senderTeam = $this->invitationService->getSenderCaptainTeamInSameSport($sender, $receiverTeam->sport_id);
-        if (!$senderTeam) {
-            return response()->json([
-                'message' => 'You must be a captain of a team in the same sport to send this invitation.',
-                'success' => false,
-            ], 403);
-        }
-        // Check if sender's team has enough players
-        $errors = $this->teamValidator->validateTeamPlayerCount($senderTeam, 'team1');
-        if (!empty($errors)) {
-            throw new ValidationException($errors);
-        }
-        $invitation = $this->invitationService->createInvitation($validated['type'], $validated['receiver_id'], $validated['sender_id'], $validated['invitable_id']);
-        if ($invitation) {
-            $this->notificationService->create(
-                $validated['receiver_id'],
-                NotificationType::INVITATION_NOTIFICATION,
-                'Invitation de match',
-                "Vous avez reçu une invitation pour le  match  contre {$senderTeam->name}.",
-                $invitation->id,
-                Invitation::class
-            );
-            return response()->json([
-                'message' => 'Invitation sent successfully.',
-                'invitation' => new InvitationResource($invitation),
-                'success' => true,
-            ], 201);
-        }
     }
 }

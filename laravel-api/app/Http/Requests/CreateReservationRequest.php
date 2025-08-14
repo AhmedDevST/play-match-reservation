@@ -22,7 +22,7 @@ class CreateReservationRequest extends FormRequest
                 'required',
                 Rule::exists('time_slot_instances', 'id')->where('status', 'available'),
             ],
-            'is_match' => 'boolean',
+            'is_match' => 'required|boolean',
         ];
 
         // Add match-specific validation if is_match is true

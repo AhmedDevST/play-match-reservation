@@ -17,14 +17,7 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         // This method will return the data for home page
-        try {
             $userId = Auth::id();
-            if (!$userId) {
-                return response()->json([
-                    'message' => 'User not authenticated.',
-                    'success' => false,
-                ], 401);
-            }
             // data for public pending matches
             $limit = $request->query('public_match_limit',4); // get ?limit=10 from URL, null if not provided
             $matches = $this->gameService->getPublicPendingMatches($userId, $limit);
@@ -35,11 +28,5 @@ class HomeController extends Controller
                 'message' => 'Home Data retrieved successfully',
                 'success' => true,
             ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Failed to retrieve Home Data',
-                'success' => false,
-            ], 500);
-        }
     }
 }

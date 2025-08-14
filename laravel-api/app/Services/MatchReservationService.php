@@ -1,20 +1,16 @@
 <?php
 
 namespace App\Services;
-
-use App\Enums\InvitationStatus;
 use App\Enums\MatchStatus;
 use App\Enums\MatchType;
 use App\Enums\ReservationStatus;
-use App\Enums\TypeInvitation;
-use App\Exceptions\ValidationException;
 use App\Models\Game;
-use App\Models\Invitation;
 use App\Models\Reservation;
 use App\Models\Team;
 use App\Models\TeamMatch;
 use App\Models\TimeSlotInstance;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class MatchReservationService
 {
@@ -26,7 +22,7 @@ class MatchReservationService
         private InvitationService $invitationService
     ) {}
 
-    public function createMatchReservation(array $data, int $userId): array
+    public function createMatchReservation(array $data, int $userId)
     {
         return DB::transaction(function () use ($data, $userId) {
             // Load and validate teams
@@ -55,10 +51,7 @@ class MatchReservationService
                     $this->notificationService->createMatchInvitationNotification($invitation, $teams);
                 }
             }
-            return [
-                'match_id' => $match->id,
-                'reservation_id' => $reservation->id
-            ];
+            return $reservation;
         });
     }
 
@@ -85,7 +78,7 @@ class MatchReservationService
         // Facility validation
         $errors = array_merge($errors, $this->facilityValidator->validateFacilityCompatibility($teams, $timeSlot));
         if (!empty($errors)) {
-            throw new ValidationException($errors);
+            throw ValidationException::withMessages($errors);
         }
     }
 

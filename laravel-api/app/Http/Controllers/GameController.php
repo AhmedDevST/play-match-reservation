@@ -22,18 +22,9 @@ class GameController extends Controller
     ) {}
     public function initGame(Request $request, $facilityId)
     {
-        // Step 1: Check if the user is authenticated
         $user = Auth::user();
-        if (!$user) {
-            return response()->json([
-                'message' => 'User not authenticated.',
-                'success' => false,
-            ], 401);
-        }
-
         $sports = SportFacility::find($facilityId)->sports;
         $sportIds = $sports->pluck('id');
-
         $userTeams = $user->userTeamLinks
             ->where('is_captain', true)
             ->where('has_left_team', false)

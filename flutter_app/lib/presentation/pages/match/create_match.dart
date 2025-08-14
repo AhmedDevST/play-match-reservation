@@ -41,7 +41,7 @@ class _CreateMatchState extends ConsumerState<CreateMatch>  with SingleTickerPro
   void initState() {
     super.initState();
     initTheGame();
-    //  _searchController.addListener(_filterTeams);
+  //  _searchController.addListener(_filterTeams);
     _searchController.addListener(() {
       EasyDebounce.debounce(
         'search-debouncer', // unique tag
@@ -173,7 +173,7 @@ class _CreateMatchState extends ConsumerState<CreateMatch>  with SingleTickerPro
                         _buildTeamDropdown(),
                         const SizedBox(height: 24),
                         _buildSectionTitle('Select a Team'),
-                       // _buildMatchTypeToggle(),
+                        _buildMatchTypeToggle(),
                         const SizedBox(height: 24),
                         if (isPrivateMatch) ...[
                           _buildPrivateMatchConfig(),
@@ -212,69 +212,78 @@ class _CreateMatchState extends ConsumerState<CreateMatch>  with SingleTickerPro
     );
   }
 
-  Widget _buildTeamDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<Team>(
-          isExpanded: true,
-          hint: const Text('Select your team'),
-          value: selectedTeam,
-          items: uersTeams
-              .map((team) => DropdownMenuItem<Team>(
-                    value: team,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: CircleAvatar(
-                              radius: 15,
-                              backgroundColor: Colors.grey.shade200,
-                              backgroundImage: NetworkImage(team.fullImagePath),
-                              onBackgroundImageError: (_, __) {}),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(team.name,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold)),
-                              Text(
-                                team.sport.name,
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ))
-              .toList(),
-          onChanged: (value) {
-            setState(() {
-              selectedTeam = value;
-              invitedTeam = null;
-              _searchController.clear();
-            });
-          },
+ Widget _buildTeamDropdown() {
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.grey.withOpacity(0.1),
+          spreadRadius: 1,
+          blurRadius: 4,
+          offset: const Offset(0, 2),
         ),
-      ),
-    );
-  }
+      ],
+    ),
+    child: uersTeams.isEmpty
+        ? const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'No teams available',
+              style: TextStyle(color: Colors.grey),
+            ),
+          )
+        : DropdownButtonHideUnderline(
+            child: DropdownButton<Team>(
+              isExpanded: true,
+              hint: const Text('Select your team'),
+              value: selectedTeam,
+              items: uersTeams
+                  .map((team) => DropdownMenuItem<Team>(
+                        value: team,
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: CircleAvatar(
+                                radius: 15,
+                                backgroundColor: Colors.grey.shade200,
+                                backgroundImage: NetworkImage(team.fullImagePath),
+                                onBackgroundImageError: (_, __) {},
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    team.name,
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    team.sport.name,
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedTeam = value;
+                  invitedTeam = null;
+                  _searchController.clear();
+                });
+              },
+            ),
+          ),
+  );
+}
 
   Widget _buildMatchTypeToggle() {
     return Container(
