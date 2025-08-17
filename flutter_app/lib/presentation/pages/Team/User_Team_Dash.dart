@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/presentation/pages/Team/Create_Team.dart';
 import 'package:flutter_app/models/Sport.dart';
@@ -129,11 +130,21 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.grey.shade800),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child:
+                Icon(Icons.arrow_back, color: Colors.grey.shade800, size: 20),
+          ),
           onPressed: () => Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomePage()),
@@ -143,29 +154,33 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
           'Mes Équipes',
           style: TextStyle(
             color: Colors.grey.shade800,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.add, color: Colors.grey.shade800),
-            onPressed: () {
-              // En mode test, on utilise toujours l'ID 1
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CreateTeam(
-                    userId: "1",
-                    isTestMode: true,
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            child: FloatingActionButton.small(
+              backgroundColor: const Color(0xFF1E88E5),
+              elevation: 0,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateTeam(
+                      userId: "1",
+                      isTestMode: true,
+                    ),
                   ),
-                ),
-              ).then((_) =>
-                  _loadTeams()); // Recharger les équipes après la création
-            },
+                ).then((_) => _loadTeams());
+              },
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
           ),
         ],
       ),
-      body: _buildBody(_userTeamLinks), // Utiliser les données locales
+      body: _buildBody(_userTeamLinks),
     );
   }
 
@@ -313,23 +328,19 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
   Widget _buildTeamCard(UserTeamLink teamLink, {bool isHistorical = false}) {
     final team = teamLink.team;
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            spreadRadius: 2,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
           ),
         ],
-        // Ajouter un border pour les équipes dissoutes
         border: isHistorical
-            ? Border.all(
-                color: Colors.red.withOpacity(0.3),
-                width: 1,
-              )
+            ? Border.all(color: Colors.red.withOpacity(0.2), width: 1)
             : null,
       ),
       child: Material(
@@ -342,190 +353,162 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
                 builder: (context) => TeamDetails(teamId: team.id),
               ),
             );
-
-            // Si l'équipe a été dissoute (result == true), recharger les données
             if (result == true) {
               await _loadTeams();
             }
           },
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header with team name and badges
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              team.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: isHistorical
-                                    ? Colors.grey.shade600
-                                    : Colors.grey.shade800,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (teamLink.isCaptain) ...[
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.star,
-                              color: isHistorical ? Colors.grey : Colors.amber,
-                              size: 20,
-                            ),
+                    // Team avatar/icon
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF1E88E5),
+                            const Color(0xFF42A5F5),
                           ],
-                          if (isHistorical) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'DISSOUTE',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: Icon(
+                        _getSportIcon(team.sport),
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2EE59D)
-                            .withOpacity(isHistorical ? 0.05 : 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        'Score: ${team.totalScore}',
-                        style: TextStyle(
-                          color: isHistorical
-                              ? Colors.grey
-                              : const Color(0xFF2EE59D),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  team.name,
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: isHistorical
+                                        ? Colors.grey.shade600
+                                        : Colors.grey.shade800,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (teamLink.isCaptain)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    gradient: const LinearGradient(
+                                      colors: [Colors.amber, Colors.orange],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: const Text(
+                                    'CAPITAINE',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _getSportName(team.sport),
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E88E5)
-                              .withOpacity(isHistorical ? 0.05 : 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          _getSportIcon(team.sport),
-                          color: isHistorical
-                              ? Colors.grey
-                              : const Color(0xFF1E88E5),
-                          size: 20,
-                        ),
+                const SizedBox(height: 20),
+
+                // Stats row
+                Row(
+                  children: [
+                    _buildStatChip(
+                      icon: Icons.emoji_events,
+                      label: 'Score',
+                      value: '${team.totalScore}',
+                      color: const Color(0xFF2EE59D),
+                      isHistorical: isHistorical,
+                    ),
+                    const SizedBox(width: 12),
+                    _buildStatChip(
+                      icon: Icons.star_rounded,
+                      label: 'Note',
+                      value: team.averageRating.toStringAsFixed(1),
+                      color: Colors.amber,
+                      isHistorical: isHistorical,
+                    ),
+                    if (isHistorical) ...[
+                      const SizedBox(width: 12),
+                      _buildStatChip(
+                        icon: Icons.event_busy_rounded,
+                        label: 'Dissoute',
+                        value: teamLink.endDate != null
+                            ? '${teamLink.endDate!.day}/${teamLink.endDate!.month}'
+                            : 'N/A',
+                        color: Colors.red,
+                        isHistorical: true,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _getSportName(team.sport),
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E88E5)
-                              .withOpacity(isHistorical ? 0.05 : 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.star,
-                          color: isHistorical
-                              ? Colors.grey
-                              : const Color(0xFF1E88E5),
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Note: ${team.averageRating.toStringAsFixed(1)}',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      if (isHistorical && teamLink.endDate != null) ...[
-                        const SizedBox(width: 16),
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.event_busy,
-                            color: Colors.red,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Dissoute le: ${teamLink.endDate?.day}/${teamLink.endDate?.month}/${teamLink.endDate?.year}',
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
+
+                // Team image
                 if (team.image != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(16),
                     child: ColorFiltered(
                       colorFilter: isHistorical
-                          ? ColorFilter.mode(Colors.grey, BlendMode.saturation)
+                          ? ColorFilter.mode(
+                              Colors.grey.shade400,
+                              BlendMode.saturation,
+                            )
                           : const ColorFilter.mode(
-                              Colors.transparent, BlendMode.multiply),
+                              Colors.transparent,
+                              BlendMode.multiply,
+                            ),
                       child: Image.network(
                         team.fullImagePath,
-                        height: 150,
+                        height: 120,
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
-                            height: 150,
-                            color: Colors.grey.shade200,
-                            child: const Icon(Icons.error_outline),
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: Colors.grey.shade400,
+                              size: 32,
+                            ),
                           );
                         },
                       ),
@@ -535,6 +518,55 @@ class _UserTeamDashState extends ConsumerState<UserTeamDash>
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+    required bool isHistorical,
+  }) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: (isHistorical ? Colors.grey.shade100 : color.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                (isHistorical ? Colors.grey.shade300 : color.withOpacity(0.3)),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isHistorical ? Colors.grey.shade500 : color,
+              size: 18,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                color: isHistorical ? Colors.grey.shade600 : color,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );

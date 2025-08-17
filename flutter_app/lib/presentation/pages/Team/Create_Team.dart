@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_app/models/Sport.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:mime/mime.dart';
@@ -115,7 +116,7 @@ class _CreateTeamState extends ConsumerState<CreateTeam> {
 
         if (mounted) {
           // Notifier le provider qu'une nouvelle équipe a été créée
-          await ref.read(teamsProvider.notifier).onTeamCreated(team,token);
+          await ref.read(teamsProvider.notifier).onTeamCreated(team, token);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Équipe créée avec succès')),
@@ -149,201 +150,460 @@ class _CreateTeamState extends ConsumerState<CreateTeam> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.grey.shade800),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child:
+                Icon(Icons.arrow_back, color: Colors.grey.shade800, size: 20),
+          ),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
           'Créer une équipe',
           style: TextStyle(
             color: Colors.grey.shade800,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
+            fontSize: 24,
           ),
         ),
+        centerTitle: true,
       ),
       body: Form(
         key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(20.0),
           children: [
-            // Section Nom de l'équipe
-            Text(
-              'Nom de l\'équipe',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
+            // Hero section with icon
+            Container(
+              padding: const EdgeInsets.all(32),
+              margin: const EdgeInsets.only(bottom: 32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF1E88E5),
+                    const Color(0xFF42A5F5),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E88E5).withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.group_add_rounded,
+                      size: 48,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Nouvelle Équipe',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Créez votre équipe et invitez vos amis',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white.withOpacity(0.9),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                hintText: 'Entrez le nom de l\'équipe',
-                hintStyle: TextStyle(color: Colors.grey.shade400),
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+
+            // Team Name Section
+            _buildSectionCard(
+              icon: Icons.sports_rounded,
+              title: 'Nom de l\'équipe',
+              color: const Color(0xFF1E88E5),
+              child: TextFormField(
+                controller: _nameController,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey.shade800,
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
+                decoration: InputDecoration(
+                  hintText: 'Ex: Les Champions, FC Barcelona...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400),
+                  filled: true,
+                  fillColor: const Color(0xFF1E88E5).withOpacity(0.05),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: const Color(0xFF1E88E5).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF1E88E5),
+                      width: 2,
+                    ),
+                  ),
+                  prefixIcon: Container(
+                    margin: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E88E5).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.edit_rounded,
+                      color: const Color(0xFF1E88E5),
+                      size: 20,
+                    ),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: Color(0xFF1E88E5), width: 1.5),
-                ),
+                validator: (value) {
+                  if (value?.isEmpty ?? true) {
+                    return 'Le nom de l\'équipe est requis';
+                  }
+                  if (value!.length < 3) {
+                    return 'Le nom doit contenir au moins 3 caractères';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value?.isEmpty ?? true) {
-                  return 'Le nom de l\'équipe est requis';
-                }
-                return null;
-              },
             ),
+
             const SizedBox(height: 24),
 
-            // Section Sport
-            Text(
-              'Sport',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<Sport>(
-              value: _selectedSport,
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.grey.shade50,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade200),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide:
-                      const BorderSide(color: Color(0xFF1E88E5), width: 1.5),
-                ),
-              ),
-              items: _sports.map((sport) {
-                return DropdownMenuItem(
-                  value: sport,
-                  child: Text(sport.name),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() => _selectedSport = value);
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // Section Image
-            Text(
-              'Image de l\'équipe',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 12),
-            InkWell(
-              onTap: _pickImage,
+            // Sport Selection Section
+            _buildSectionCard(
+              icon: Icons.sports_soccer_rounded,
+              title: 'Choisir le sport',
+              color: const Color(0xFF2EE59D),
               child: Container(
-                height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                  color: const Color(0xFF2EE59D).withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF2EE59D).withOpacity(0.2),
+                    width: 1,
+                  ),
                 ),
-                child: _selectedImage != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          File(_selectedImage!),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              alignment: Alignment.center,
-                              child: Icon(
-                                Icons.error_outline,
-                                size: 48,
-                                color: Colors.grey.shade400,
-                              ),
-                            );
-                          },
-                        ),
-                      )
-                    : Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                child: DropdownButtonFormField<Sport>(
+                  value: _selectedSport,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
+                    ),
+                    prefixIcon: Container(
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2EE59D).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        _getSelectedSportIcon(),
+                        color: const Color(0xFF2EE59D),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade800,
+                  ),
+                  dropdownColor: Colors.white,
+                  items: _sports.map((sport) {
+                    return DropdownMenuItem(
+                      value: sport,
+                      child: Row(
                         children: [
                           Icon(
-                            Icons.add_photo_alternate_outlined,
-                            size: 48,
-                            color: Colors.grey.shade400,
+                            _getSportIcon(sport),
+                            size: 20,
+                            color: const Color(0xFF2EE59D),
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Ajouter une image',
+                          const SizedBox(width: 12),
+                          Text(sport.name),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() => _selectedSport = value);
+                  },
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Image Section
+            _buildSectionCard(
+              icon: Icons.image_rounded,
+              title: 'Image de l\'équipe',
+              color: Colors.amber,
+              child: InkWell(
+                onTap: _pickImage,
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.3),
+                      width: 2,
+                      style: BorderStyle.solid,
+                    ),
+                  ),
+                  child: _selectedImage != null
+                      ? Stack(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.file(
+                                File(_selectedImage!),
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildImagePlaceholder();
+                                },
+                              ),
+                            ),
+                            Positioned(
+                              top: 12,
+                              right: 12,
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : _buildImagePlaceholder(),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // Create Button
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E88E5).withOpacity(0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _createTeam,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E88E5),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 3,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.group_add_rounded,
+                            size: 24,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Créer l\'équipe',
                             style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ],
                       ),
               ),
             ),
-            const SizedBox(height: 32),
 
-            // Bouton de création
-            ElevatedButton(
-              onPressed: _isLoading ? null : _createTeam,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E88E5),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Créer l\'équipe',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.amber.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            Icons.add_photo_alternate_rounded,
+            size: 48,
+            color: Colors.amber.shade700,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Ajouter une image',
+          style: TextStyle(
+            color: Colors.grey.shade700,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Appuyez pour sélectionner',
+          style: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getSportIcon(Sport sport) {
+    switch (sport.id) {
+      case 1:
+        return Icons.sports_soccer_rounded;
+      case 2:
+        return Icons.sports_basketball_rounded;
+      case 3:
+        return Icons.sports_handball_rounded;
+      case 4:
+        return Icons.sports_tennis_rounded;
+      case 5:
+        return Icons.sports_volleyball_rounded;
+      default:
+        return Icons.sports_rounded;
+    }
+  }
+
+  IconData _getSelectedSportIcon() {
+    if (_selectedSport == null) return Icons.sports_rounded;
+    return _getSportIcon(_selectedSport!);
   }
 
   @override
