@@ -27,7 +27,7 @@ class EmptyStateWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget animatedOrIcon = lottieUrl != null
         ? SizedBox(
-            height: 120,
+            height: 100,
             child: Lottie.network(lottieUrl!),
           )
         : CircleAvatar(

@@ -4,7 +4,6 @@ import 'package:flutter_app/models/TimeZone.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-
 const TIME_SLOT_URL = "$API_URL/api/sport-facilities";
 
 class TimeSlotResponse {
@@ -20,7 +19,8 @@ class TimeSlotResponse {
 
   factory TimeSlotResponse.fromJson(Map<String, dynamic> json) {
     return TimeSlotResponse(
-      dates: List<DateTime>.from(json['dates'].map((date) => DateTime.parse(date))),
+      dates: List<DateTime>.from(
+          json['dates'].map((date) => DateTime.parse(date))),
       timeSlots: (json['time_slots'] as List)
           .map((slot) => TimeSlot.fromJson(slot))
           .toList(),
@@ -50,17 +50,18 @@ Future<TimeSlotResponse> fetchInitTimeSlots(int facilityId) async {
   throw Exception("Failed to fetch sport facilities");
 }
 
-
 Future<List<TimeSlot>> fetchTimeSlots(int facilityId, DateTime date) async {
   print("Calling Fetch  time slots of Sport Facilities");
-  final url = Uri.parse("$TIME_SLOT_URL/$facilityId/available-time-slots?date=${date.toIso8601String()}");
   
- final response = await http.get(url);
-
+  final url = Uri.parse(
+      "$TIME_SLOT_URL/$facilityId/available-time-slots?date=${date.toIso8601String()}");
+  final response = await http.get(
+    url,
+    headers: {'Content-Type': 'application/json'},
+  );
   if (response.statusCode == 200) {
     final data = jsonDecode(response.body);
-    print(data);
-     return (data['time_slots'] as List)
+    return (data['time_slots'] as List)
         .map((item) => TimeSlot.fromJson(item))
         .toList();
   }
@@ -68,8 +69,7 @@ Future<List<TimeSlot>> fetchTimeSlots(int facilityId, DateTime date) async {
 }
 
 void main() async {
-  final timeSlots = await fetchTimeSlots(4, DateTime(2025, 06, 07));
+  final timeSlots = await fetchTimeSlots(4, DateTime(2025, 08, 21));
+
   print(timeSlots.length);
 }
-
-

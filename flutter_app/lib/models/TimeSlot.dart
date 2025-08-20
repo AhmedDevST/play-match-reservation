@@ -28,7 +28,7 @@ class TimeSlot {
       endTime: json['end_time'],
       status: json['status'],
       isException: json['is_exception'],
-      exceptionReason: json['exception_reason'],
+      exceptionReason: json['exception_reason'] as String?,
       timeZone: TimeZone.fromJson(json['time_zone']),
       date: DateTime.parse(json['date']),
     );

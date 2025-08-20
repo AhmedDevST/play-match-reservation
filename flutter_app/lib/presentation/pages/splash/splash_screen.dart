@@ -44,6 +44,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           //https://lottie.host/embed/d938741d-8754-44f1-91cf-80fee5ddd587/SaOX2SpGTv.json
           child: Lottie.network(
             'https://lottie.host/d938741d-8754-44f1-91cf-80fee5ddd587/SaOX2SpGTv.json',
+             errorBuilder :(context, error, stackTrace) => const CircularProgressIndicator(),
             controller: _controller,
             fit: BoxFit.contain,
             onLoaded: (composition) {

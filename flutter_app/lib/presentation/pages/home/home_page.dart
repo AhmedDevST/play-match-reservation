@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_app/providers/auth_provider.dart';
 import 'package:flutter_app/presentation/widgets/bottom_nav_bar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_app/presentation/widgets/match/PublicMatchesCarousel.dart';
 import 'package:flutter_app/core/services/home/home_service.dart';
 import 'package:flutter_app/presentation/widgets/common/loading_content.dart';
+import 'package:flutter_app/presentation/widgets/match/PublicMatchesSection.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -125,9 +125,8 @@ class _HomePageState extends ConsumerState<HomePage>
     return Scaffold(
       body: isLoading
           ? const LoadingContent(
-              lottieUrl:
-                  "https://lottie.host/53de5d49-207d-4767-af25-9f20f6fb6415/uDd2URAR0g.json",
-            )
+            
+          )
           //const Center(child: CircularProgressIndicator())
           : SafeArea(
               child: Column(
@@ -145,10 +144,12 @@ class _HomePageState extends ConsumerState<HomePage>
                           // Titre de bienvenue
                           _buildWelcomeTitle(),
                           const SizedBox(height: 20),
-                          PublicMatchesCarousel(
+
+                          // Public Matches Section
+                          PublicMatchesSection(
                             publicGames: publicGames,
                           ),
-                          const SizedBox(height: 40),
+
                           // Carrousel d'images
                           _buildImageCarousel(),
 

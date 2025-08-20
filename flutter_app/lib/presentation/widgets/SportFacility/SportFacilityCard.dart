@@ -1,140 +1,221 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_app/models/SportFacility.dart';
-import 'package:image_network/image_network.dart';
-import 'package:flutter_app/presentation/widgets/SportFacility/sport_chip.dart';
+import 'package:flutter_app/presentation/pages/SportFacility/FacilityDetailsPage.dart';
 
 class SportFacilityCard extends StatelessWidget {
-  final SportFacility sportFacility;
-  final VoidCallback onTap;
-  final VoidCallback onSelectTap;
+  final SportFacility facility;
+  final VoidCallback? onTap;
+  final VoidCallback? onSelect;
 
   const SportFacilityCard({
-    super.key,
-    required this.sportFacility,
-    required this.onTap,
-    required this.onSelectTap,
-  });
+    Key? key,
+    required this.facility,
+    this.onTap,
+    this.onSelect,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 15,
+            spreadRadius: 2,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        onTap: onTap ??
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FacilityDetailsPage(
+                    sportFacility: facility,
+                  ),
+                ),
+              );
+            },
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(16),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: SizedBox(
-                  width: 110,
-                  height: 110,
-                  child: ImageNetwork(
-                    image: sportFacility.fullImagePath,
-                    height: 110,
-                    width: 110,
-                    fitWeb: BoxFitWeb.cover,
-                    fitAndroidIos: BoxFit.cover,
-                    onLoading: const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                    onError: const Icon(Icons.error),
+              // Image Section with NetworkImageHandler
+              Hero(
+                tag: 'facility_${facility.id}',
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: facility.fullImagePath.isNotEmpty
+                        ? Image.network(
+                            facility.fullImagePath,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: Colors.grey.shade200,
+                                child: const Icon(
+                                  Icons.sports,
+                                  color: Colors.grey,
+                                  size: 40,
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            color: Colors.grey.shade200,
+                            child: const Icon(
+                              Icons.sports,
+                              color: Colors.grey,
+                              size: 40,
+                            ),
+                          ),
                   ),
                 ),
               ),
+
               const SizedBox(width: 16),
+
+              // Content Section
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
                           child: Text(
-                            sportFacility.name,
-                            style: const TextStyle(
+                            facility.name,
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              sportFacility.rating.toString(),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 14,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 2),
+                              Text(
+                                facility.rating.toString(),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Theme.of(context).primaryColor, size: 16),
+                        Icon(
+                          Icons.location_on,
+                          color: const Color(0xFF1E88E5),
+                          size: 14,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            sportFacility.address,
-                            style: const TextStyle(fontSize: 13, color: Colors.black54),
+                            facility.address,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 6,
-                      children: sportFacility.sports
-                          ?.map((sport) => SportChip(label: sport.name))
-                          .toList() ?? [],
-                    ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Text(
-                          '\u20B9${sportFacility.pricePerHour}/Hour',
-                          style: const TextStyle(
-                            fontSize: 15,
+                          '\u20B9${facility.pricePerHour}',
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                            color: const Color(0xFF2EE59D),
+                          ),
+                        ),
+                        Text(
+                          '/heure',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
                           ),
                         ),
                         const Spacer(),
-                        ElevatedButton(
-                          onPressed: onSelectTap,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF2EE59D), Color(0xFF26D0CE)],
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                            textStyle: const TextStyle(fontSize: 14),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF2EE59D).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: const Text('Select', style: TextStyle(color: Colors.white)),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: onSelect,
+                              borderRadius: BorderRadius.circular(20),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                child: Text(
+                                  'Sélectionner',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -147,4 +228,4 @@ class SportFacilityCard extends StatelessWidget {
       ),
     );
   }
-} 
+}
