@@ -15,7 +15,7 @@ import 'package:flutter_app/presentation/pages/Team/Team_details.dart';
 import 'package:flutter_app/presentation/pages/reservation/SelectFacilitySport.dart';
 import 'package:flutter_app/presentation/pages/splash/splash_screen.dart';
 import 'package:flutter_app/core/config/routes.dart';
-import 'package:flutter_app/presentation/pages/discover/Discover.dart';
+
 
 void main() {
   runApp(
