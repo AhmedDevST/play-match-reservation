@@ -73,15 +73,27 @@ Réservation (1-Many)
 ```
 1. Utilisateur choisit installation + créneau
 2. POST /reservations
-3. Vérifier : créneau libre ? utilisateur authentifié ? paiement OK ?
+3. Vérifier : créneau libre ? utilisateur authentifié ? 
 4. Créer réservation → État pending
 5. Notifier gestionnaire installation
 ```
 
-### Choix Techniques
-- **Atomicité** : Vérification + création en une transaction BD
-- **Concurrence** : Lock pessimiste sur TimeSlot pour éviter overbooking
-- **Audit Trail** : Chaque modification loggée (created_at, updated_at, deleted_at)
+Le ReservationController. Ce contrôleur gère toute la logique métier liée aux réservations, qu'il s'agisse de réservations simples ou de matchs organisés.
+
+### Architecture et Injection de Dépendances 
+"Commençons par l'architecture. nous utilisons l'injection de dépendances via le constructeur :"
+```php
+// code
+```
+"Nous injectons deux services distincts :
+
+- **ReservationService** pour les réservations simples
+- **MatchReservationService** pour les réservations de matchs
+
+Cette approche respecte le principe de Séparation des Responsabilités (SRP) et rend notre code testable et maintenable."
+
+- **API Resource** : Nous utilisons ReservationResource pour formater la réponse de manière standardisée et contrôler exactement quelles données sont exposées à l'API.
+- **Helper personnalisé** : ApiResponse::success() assure une structure de réponse cohérente dans toute l'application."
 
 ### Code Exemple
 ```php
@@ -101,53 +113,9 @@ class Reservation extends Model {
 
 ---
 
-## 4️⃣ Système de Matchs & Équipes
 
-### Architecture
 
-```
-Équipe
-  ├── Owner (User)
-  ├── Members (Many-to-Many)
-  └── Matchs (1-Many)
-
-Match
-  ├── Équipe1
-  ├── Équipe2
-  ├── Installation + TimeSlot
-  ├── Invitations (aux joueurs)
-  └── Statut (scheduled, playing, finished, cancelled)
-```
-
-### Processus de Création Match
-```
-1. Leader crée match → attache équipe + créneau
-2. Match généré avec status "scheduled"
-3. Invitations créées pour chaque joueur
-4. Notifications pushées aux joueurs
-5. À la date, statut → "playing" → "finished"
-```
-
-### Gestion des Membres d'Équipe
-**Pivot Table** : `team_player`
-```php
-class Team extends Model {
-    public function players() {
-        return $this->belongsToMany(User::class)
-                    ->withPivot('role') // role: captain, player
-                    ->withTimestamps();
-    }
-}
-```
-
-### Bonnes Pratiques
-✅ **Polymorphism** : Equipes = réutilisables (friendly, ligue, club)  
-✅ **Soft Delete** : Matchs conservés pour historique  
-✅ **Timestamps** : Traçabilité complète
-
----
-
-## 5️⃣ Système de Notifications
+## 4 Système de Notifications
 
 ### Architecture Simple
 
@@ -195,7 +163,7 @@ DELETE /notifications/{id}      → Supprimer
 
 ---
 
-## 🎯 Résumé Backend
+##  Résumé Backend
 
 | Aspect | Solution | Bénéfice |
 |--------|----------|----------|
