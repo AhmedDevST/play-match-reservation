@@ -281,20 +281,18 @@ class Notification {
 
 ---
 
-## 3️⃣ Providers Riverpod (⭐ Très Important)
+## 3️⃣ Providers Riverpod 
 
 ### Architecture Providers
 
 ```
 authProvider (User connecté)
     ↓
+Tous les autre providers dépend totalement de authProvider comme : 
+
 reservationsProvider
     ├─ Dépend de authProvider
     └─ Récupère réservations de l'user
-
-gamesProvider
-    ├─ Dépend de authProvider
-    └─ Récupère matchs de l'user
 
 teamsProvider
     ├─ Dépend de authProvider
@@ -324,62 +322,11 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
 }
 ```
 
-### Exemple : Réservations Provider
-```dart
-final reservationsProvider = FutureProvider<List<Reservation>>((ref) async {
-  final user = ref.watch(authProvider); // Dépendance !
-  
-  return user.when(
-    data: (u) => ApiService.getReservations(u.id),
-    loading: () => [],
-    error: (err, stack) => throw err,
-  );
-});
+
+
+
 ```
 
-### Exemple : État Mutable (StateNotifier)
-```dart
-final gameCreationProvider = StateNotifierProvider<GameNotifier, AsyncValue<Game?>>((ref) {
-  return GameNotifier(ref);
-});
-
-class GameNotifier extends StateNotifier<AsyncValue<Game?>> {
-  GameNotifier(this.ref) : super(const AsyncValue.data(null));
-
-  Future<void> createGame(Game game) async {
-    state = const AsyncValue.loading();
-    try {
-      final created = await ApiService.createGame(game);
-      state = AsyncValue.data(created);
-      ref.refresh(gamesProvider); // Refresh la liste des games
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
-}
-```
-
-### Bonnes Pratiques Riverpod
-✅ **Family Modifier** : Paramétrer un provider
-```dart
-final gameProvider = FutureProvider.family<Game, String>((ref, gameId) async {
-  return ApiService.getGame(gameId);
-});
-```
-
-✅ **Select** : Écouter uniquement une partie
-```dart
-final userNameProvider = ref.watch(authProvider.select((user) => user?.name));
-```
-
-✅ **Combine** : Dépendre de plusieurs providers
-```dart
-final userGamesProvider = FutureProvider((ref) async {
-  final user = ref.watch(authProvider);
-  final games = ref.watch(gamesProvider);
-  return games.where((g) => g.team1.members.contains(user)).toList();
-});
-```
 
 ---
 
@@ -412,7 +359,7 @@ HomePage (Hub central)
     └─ NotificationsPage
 ```
 
-### Widget Exemple : ReservationListWidget
+### Widget Exemple : ReservationListWidget pour lister tous les réservation : 
 ```dart
 class ReservationListWidget extends ConsumerWidget {
   @override
@@ -541,43 +488,12 @@ DB::transaction(function () {
 
 ### ✅ Protection
 - CORS configuré (only trusted origins)
-- Rate limiting sur endpoints sensibles
 - Soft delete pour audit trail
 
 ---
 
-## Exemple : Récupérer Notifications
 
-### Frontend Riverpod
-```dart
-final notificationsProvider = FutureProvider((ref) async {
-  return ApiService.getNotifications();
-});
-
-// Widget
-ref.watch(notificationsProvider).when(
-  data: (notifs) => NotificationList(notifs),
-  loading: () => Shimmer(),
-  error: (err) => ErrorWidget(),
-);
-```
-
-### Backend Laravel
-```php
-// GET /api/notifications
-public function index(Request $request) {
-    return $request->user()
-        ->notifications()
-        ->latest()
-        ->paginate(20);
-}
-```
-
----
-
----
-
-# 📊 Résumé Présentation
+# 📊 Résumé
 
 | Layer | Technologie | Rôle |
 |-------|-------------|------|
@@ -585,25 +501,5 @@ public function index(Request $request) {
 | **State** | Riverpod | Gestion réactive de l'état |
 | **Models** | Dart Classes | Représentation des données |
 | **UI** | Flutter Widgets | Présentation & Interaction |
-
----
-
-# 🎯 Points Clés à Retenir
-
-1. **Architecture** : Clean separation entre business logic (Laravel) et UI (Flutter)
-2. **État** : Riverpod pour dépendances automatiques et testabilité
-3. **Sécurité** : Sanctum + Validation stricte backend
-4. **Scalabilité** : Transactions, locks, indexation pour éviter les race conditions
-5. **UX** : Notifications en temps réel, offline support, caching intelligent
-
----
-
-**Durée présentation suggérée** : 15-20 minutes (adapter selon questions)
-
-**Questions probables** :
-- "Comment gérez-vous les race conditions ?" → Locks + Transactions
-- "Pourquoi Riverpod ?" → Meilleure composabilité que Provider
-- "Comment testiez-vous ?" → Unit tests (Pest), UI tests (Flutter test)
-- "Scalabilité ?" → Caching, pagination, indexation BD, load balancing
 
 ---
